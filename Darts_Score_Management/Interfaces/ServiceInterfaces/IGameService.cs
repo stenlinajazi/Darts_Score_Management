@@ -1,0 +1,15 @@
+﻿using Darts_Score_Management.DTOs.Game;
+
+namespace Darts_Score_Management.Interfaces.ServiceInterfaces
+{
+    public interface IGameService
+    {
+        Task<GameDTO> GetGameByIdAsync(int id);
+        Task<IEnumerable<GameDTO>> GetAllGamesAsync();
+        Task<GameDTO> CreateGameAsync(CreateGameDTO createGameDto);
+        Task<GameDTO> UpdateGameAsync(int id, GameDTO gameDto);
+        Task DeleteGameAsync(int id);
+        Task<IEnumerable<GameDTO>> GetPlayerGamesAsync(int playerId);
+        Task<GameDTO> EndGameAsync(int id, int winnerId);
+    }
+}

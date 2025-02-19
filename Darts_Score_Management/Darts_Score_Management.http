@@ -1,0 +1,6 @@
+@Darts_Score_Management_HostAddress = http://localhost:5232
+
+GET {{Darts_Score_Management_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
