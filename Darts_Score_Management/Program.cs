@@ -20,12 +20,21 @@ builder.Services.AddScoped<IPlayerRepository, PlayerRepository>();
 builder.Services.AddScoped<IGameRepository, GameRepository>();
 builder.Services.AddScoped<IGamePlayerRepository, GamePlayerRepository>();
 builder.Services.AddScoped<IStatisticRepository, StatisticRepository>();
+builder.Services.AddScoped<ISetRepository, SetRepository>();
+builder.Services.AddScoped<ILegRepository, LegRepository>();
+builder.Services.AddScoped<ITurnRepository, TurnRepository>();
+
 
 // Register services
 builder.Services.AddScoped<IPlayerService, PlayerService>();
 builder.Services.AddScoped<IGameService, GameService>();
 builder.Services.AddScoped<IGamePlayerService, GamePlayerService>();
 builder.Services.AddScoped<IStatisticService, StatisticService>();
+builder.Services.AddScoped<ISetService, SetService>();
+builder.Services.AddScoped<ILegService, LegService>();
+builder.Services.AddScoped<ITurnService, TurnService>();
+builder.Services.AddScoped<IGameValidationService, GameValidationService>();
+builder.Services.AddScoped<IGameRulesEngine, GameRulesEngine>();
 builder.Services.AddAutoMapper(typeof(Program).Assembly);
 
 // Add services to the container.

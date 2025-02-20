@@ -9,10 +9,25 @@ namespace Darts_Score_Management.Repositories
     {
         public TurnRepository(AppDbContext context) : base(context) { }
 
+        public override async Task<Turn> GetByIdAsync(int id)
+        {
+            return await _context.Turns
+                .Include(t => t.Throws)
+                .Include(t => t.Leg)
+                    .ThenInclude(l => l.Set)
+                        .ThenInclude(s => s.Game)
+                .Include(t => t.Player)
+                .FirstOrDefaultAsync(t => t.Id == id);
+        }
+
         public async Task<Turn> GetTurnWithThrowsAsync(int id)
         {
             return await _context.Turns
                 .Include(t => t.Throws)
+                .Include(t => t.Leg)
+                    .ThenInclude(l => l.Set)
+                        .ThenInclude(s => s.Game)
+                .Include(t => t.Player)
                 .FirstOrDefaultAsync(t => t.Id == id);
         }
 

@@ -1,4 +1,5 @@
-﻿using Darts_Score_Management.DTOs.Throw;
+﻿using Darts_Score_Management.DTOs.Leg;
+using Darts_Score_Management.DTOs.Throw;
 
 namespace Darts_Score_Management.DTOs.Turn
 {
@@ -6,6 +7,7 @@ namespace Darts_Score_Management.DTOs.Turn
     {
         public int Id { get; set; }
         public int LegId { get; set; }
+        public LegDTO Leg { get; set; }
         public int PlayerId { get; set; }
         public int TurnNumber { get; set; }
         public int StartingScore { get; set; }

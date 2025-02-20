@@ -37,7 +37,9 @@ namespace Darts_Score_Management.Controllers
         {
             var player = await _playerService.GetPlayerByIdAsync(id);
             if (player == null)
+            {
                 return NotFound();
+            }
             return Ok(player);
         }
 

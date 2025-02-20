@@ -22,7 +22,9 @@ namespace Darts_Score_Management.Controllers
         {
             var statistic = await _statisticService.GetStatisticByIdAsync(id);
             if (statistic == null)
+            {
                 return NotFound();
+            }
             return Ok(statistic);
         }
 

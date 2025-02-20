@@ -1,4 +1,4 @@
-﻿/*
+﻿
 using AutoMapper;
 using Darts_Score_Management.Data.Models;
 using Darts_Score_Management.DTOs.Leg;
@@ -37,7 +37,7 @@ namespace Darts_Score_Management.Services
             if (leg == null)
                 throw new KeyNotFoundException($"Leg with id {id} not found");
 
-            leg.WinnerId = winnerId;
+            leg.WinnerPlayerId = winnerId;
             await _legRepository.UpdateAsync(leg);
             return _mapper.Map<LegDTO>(leg);
         }
@@ -50,4 +50,3 @@ namespace Darts_Score_Management.Services
         }
     }
 }
-*/
