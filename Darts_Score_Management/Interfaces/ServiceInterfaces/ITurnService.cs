@@ -11,5 +11,6 @@ namespace Darts_Score_Management.Interfaces.ServiceInterfaces
         Task<TurnDTO> AddThrowToTurnAsync(int turnId, CreateThrowDTO throwDto);
         //Task GetTurnByIdAsync(int turnId);
         Task<TurnDTO> GetTurnByIdAsync(int turnId);
+        Task<TurnDTO> GetLastTurnByLegAsync(int legId);
     }
 }

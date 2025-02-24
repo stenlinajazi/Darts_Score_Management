@@ -30,67 +30,83 @@ namespace Darts_Score_Management.Data
             modelBuilder.Entity<Player>()
                 .HasMany(p => p.GamePlayers)
                 .WithOne(gp => gp.Player)
-                .HasForeignKey(gp => gp.PlayerId);
+                .HasForeignKey(gp => gp.PlayerId)
+                .OnDelete(DeleteBehavior.Restrict); // Prevent cascading deletes from Player to GamePlayer
 
             modelBuilder.Entity<Player>()
                 .HasMany(p => p.Turns)
                 .WithOne(t => t.Player)
-                .HasForeignKey(t => t.PlayerId);
+                .HasForeignKey(t => t.PlayerId)
+                .OnDelete(DeleteBehavior.Restrict); // Prevent cascading deletes from Player to Turn
 
             modelBuilder.Entity<Player>()
                 .HasMany(p => p.WonLegs)
                 .WithOne(l => l.Winner)
                 .HasForeignKey(l => l.WinnerPlayerId)
-                .IsRequired(false);
+                .IsRequired(false)
+                .OnDelete(DeleteBehavior.SetNull); // Set to NULL on delete if optional
 
             modelBuilder.Entity<Player>()
                 .HasMany(p => p.WonSets)
                 .WithOne(s => s.Winner)
                 .HasForeignKey(s => s.WinnerPlayerId)
-                .IsRequired(false);
+                .IsRequired(false)
+                .OnDelete(DeleteBehavior.SetNull);
 
             // Game configuration
-            modelBuilder.Entity<Game>()
-                .HasMany(g => g.GamePlayers)
-                .WithOne(gp => gp.Game)
-                .HasForeignKey(gp => gp.GameId);
-
-            modelBuilder.Entity<Game>()
-                .HasMany(g => g.Sets)
-                .WithOne(s => s.Game)
-                .HasForeignKey(s => s.GameId);
+            modelBuilder.Entity<Game>(entity =>
+            {
+                entity.HasKey(g => g.Id);
+                entity.Property(g => g.Id).ValueGeneratedOnAdd(); // Explicitly set as identity
+                entity.HasMany(g => g.GamePlayers)
+                      .WithOne(gp => gp.Game)
+                      .HasForeignKey(gp => gp.GameId)
+                      .OnDelete(DeleteBehavior.Cascade); // Cascade delete GamePlayers if Game is deleted
+                entity.HasMany(g => g.Sets)
+                      .WithOne(s => s.Game)
+                      .HasForeignKey(s => s.GameId)
+                      .OnDelete(DeleteBehavior.Cascade);
+            });
 
             // Serialize GameSettings as JSON
             modelBuilder.Entity<Game>()
                 .Property(g => g.Settings)
                 .HasConversion(
                     v => JsonSerializer.Serialize(v, options),
-                v => JsonSerializer.Deserialize<GameSettings>(v, options)
+                    v => JsonSerializer.Deserialize<GameSettings>(v, options)
                 );
 
             // GamePlayer configuration
             modelBuilder.Entity<GamePlayer>()
                 .HasMany(gp => gp.Statistics)
                 .WithOne(s => s.GamePlayer)
-                .HasForeignKey(s => s.GamePlayerId);
+                .HasForeignKey(s => s.GamePlayerId)
+                .OnDelete(DeleteBehavior.Cascade);
+
 
             // Set configuration
             modelBuilder.Entity<Set>()
                 .HasMany(s => s.Legs)
                 .WithOne(l => l.Set)
-                .HasForeignKey(l => l.SetId);
+                .HasForeignKey(l => l.SetId)
+                .OnDelete(DeleteBehavior.Cascade);
+
 
             // Leg configuration
             modelBuilder.Entity<Leg>()
                 .HasMany(l => l.Turns)
                 .WithOne(t => t.Leg)
-                .HasForeignKey(t => t.LegId);
+                .HasForeignKey(t => t.LegId)
+                .OnDelete(DeleteBehavior.Cascade);
+
 
             // Turn configuration
             modelBuilder.Entity<Turn>()
                 .HasMany(t => t.Throws)
                 .WithOne(th => th.Turn)
-                .HasForeignKey(th => th.TurnId);
+                .HasForeignKey(th => th.TurnId)
+                .OnDelete(DeleteBehavior.Cascade);
+
 
             // Indexes for better performance
             modelBuilder.Entity<GamePlayer>()

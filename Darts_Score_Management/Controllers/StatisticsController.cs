@@ -17,6 +17,7 @@ namespace Darts_Score_Management.Controllers
         }
 
         // GET: api/statistics/5
+        //Single statistic record
         [HttpGet("{id}")]
         public async Task<ActionResult<StatisticDTO>> GetStatistic(int id)
         {
@@ -29,6 +30,7 @@ namespace Darts_Score_Management.Controllers
         }
 
         // GET: api/statistics/gameplayer/5
+        //Single game view (specific game)
         [HttpGet("gameplayer/{gamePlayerId}")]
         public async Task<ActionResult<IEnumerable<StatisticDTO>>> GetGamePlayerStatistics(int gamePlayerId)
         {

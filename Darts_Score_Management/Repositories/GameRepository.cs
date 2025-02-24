@@ -40,6 +40,35 @@ namespace Darts_Score_Management.Repositories
                 .ToListAsync();
         }
 
+
+        public async Task<Game> CreateGameWithPlayersAsync(Game game, IEnumerable<GamePlayer> gamePlayers)
+        {
+            using var transaction = await _context.Database.BeginTransactionAsync();
+            try
+            {
+                // Add and save the Game first to generate its Id
+                _context.Games.Add(game);
+                await _context.SaveChangesAsync();
+
+                // Set the GameId for each GamePlayer and add them
+                foreach (var gamePlayer in gamePlayers)
+                {
+                    gamePlayer.GameId = game.Id; // Assign the generated Game.Id
+                }
+
+                await _context.GamePlayers.AddRangeAsync(gamePlayers);
+                await _context.SaveChangesAsync();
+
+                await transaction.CommitAsync();
+                return game;
+            }
+            catch
+            {
+                await transaction.RollbackAsync();
+                throw;
+            }
+        }
+
         //public async Task<Game> CreateGameAsync(Game game, List<int> playerIds)
         //{
         //    using var transaction = await _context.Database.BeginTransactionAsync();
@@ -69,27 +98,6 @@ namespace Darts_Score_Management.Repositories
         //        throw;
         //    }
         //}
-
-        public async Task<Game> CreateGameWithPlayersAsync(Game game, IEnumerable<GamePlayer> gamePlayers)
-        {
-            using var transaction = await _context.Database.BeginTransactionAsync();
-            try
-            {
-                await _dbSet.AddAsync(game);
-                await _context.SaveChangesAsync();
-
-                await _context.GamePlayers.AddRangeAsync(gamePlayers);
-                await _context.SaveChangesAsync();
-
-                await transaction.CommitAsync();
-                return game;
-            }
-            catch
-            {
-                await transaction.RollbackAsync();
-                throw;
-            }
-        }
 
     }
 }

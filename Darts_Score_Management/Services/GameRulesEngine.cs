@@ -4,6 +4,7 @@ using Darts_Score_Management.Data.Models;
 using Darts_Score_Management.DTOs.Game;
 using Darts_Score_Management.DTOs.Statistic;
 using Darts_Score_Management.DTOs.Throw;
+using Darts_Score_Management.DTOs.Turn;
 using Darts_Score_Management.Enums;
 using Darts_Score_Management.Interfaces.ServiceInterfaces;
 using System.Transactions;
@@ -38,6 +39,8 @@ namespace Darts_Score_Management.Services
             _validationService = validationService;
             _mapper = mapper;
         }
+
+        //Validates a single dart throw against game rules (e.g., valid segments, bust conditions, finish-on-double rule) before it’s processed
         public async Task<Data.Models.ValidationResult> ValidateThrow(CreateThrowDTO throwDto, int turnId)
         {
             if (throwDto == null)
@@ -73,25 +76,47 @@ namespace Darts_Score_Management.Services
             return new Data.Models.ValidationResult { IsValid = true };
         }
 
-
-        public async Task<GameStateDTO> ProcessTurn(int turnId, List<CreateThrowDTO> throws)
+        //Processes a turn (up to 3 throws), validates it, updates the game state, and checks for completion (leg, set, game)
+        public async Task<GameStateDTO> ProcessTurnForLeg(int legId, List<CreateThrowDTO> throws)
         {
             using var transaction = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled);
             try
             {
-                var turnDto = await _turnService.GetTurnByIdAsync(turnId);
-                if (turnDto == null)
-                    throw new ArgumentException($"Turn with ID {turnId} not found");
+                var leg = await _legService.GetLegByIdAsync(legId);
+                if (leg == null)
+                    throw new ArgumentException($"Leg with ID {legId} not found");
+
+                // Determine the current player (based on turn order in the leg)
+                var lastTurnDto = await _turnService.GetLastTurnByLegAsync(legId);
+                Turn lastTurn = lastTurnDto == null ? null : _mapper.Map<Turn>(lastTurnDto); // Map TurnDTO to Turn
+
+                int playerId = DetermineNextPlayer(leg, lastTurn);
+                int turnNumber = lastTurn?.TurnNumber + 1 ?? 1; // Increment turn number or start at 1
+                int startingScore = lastTurn?.EndingScore ?? leg.Set.Game.StartingScore; // Use previous ending score or game starting score
+
+                // Create a new turn
+                var createTurnDto = new CreateTurnDTO
+                {
+                    LegId = legId,
+                    PlayerId = playerId,
+                    TurnNumber = turnNumber,
+                    StartingScore = startingScore
+                };
+                var turnDto = await _turnService.CreateTurnAsync(createTurnDto);
                 var turn = _mapper.Map<Turn>(turnDto);
-                if (turn.Leg == null || turn.Leg.Set == null)
-                    throw new InvalidOperationException("Turn is not properly associated with leg or set");
+
 
 
                 // Validate turn
-                if (!await _validationService.ValidateTurnOrder(turnId, turn.PlayerId))
+                if (!await _validationService.ValidateTurnOrder(turn.Id, turn.PlayerId))
                     throw new GameRuleViolationException("Invalid turn order", "TurnOrder");
 
-                if (!await _validationService.ValidateMaximumThrows(turnId))
+                // Ensure exactly 3 throws
+                if (throws.Count != 3)
+                    throw new GameRuleViolationException("A turn must contain exactly 3 throws", "ThrowCount");
+
+
+                if (!await _validationService.ValidateMaximumThrows(turn.Id))
                     throw new GameRuleViolationException("Maximum throws exceeded", "MaxThrows");
 
                 var gameState = await ProcessThrows(turn, throws);
@@ -112,10 +137,23 @@ namespace Darts_Score_Management.Services
             }
         }
 
+        private int DetermineNextPlayer(Leg leg, Turn lastTurn)
+        {
+            // Logic to determine the next player based on turn order in the leg
+            var gamePlayers = leg.Set.Game.GamePlayers.OrderBy(gp => gp.TurnOrder).ToList();
+            if (lastTurn == null)
+                return gamePlayers[0].PlayerId; // First turn, start with lowest TurnOrder
+
+            int currentPlayerIndex = gamePlayers.FindIndex(gp => gp.PlayerId == lastTurn.PlayerId);
+            int nextIndex = (currentPlayerIndex + 1) % gamePlayers.Count;
+            return gamePlayers[nextIndex].PlayerId;
+        }
+
 
         private async Task<GameStateDTO> ProcessThrows(Turn turn, List<CreateThrowDTO> throws)
         {
             var gameState = new GameStateDTO();
+            CreateThrowDTO lastValidThrow = null;
 
             foreach (var throwDto in throws)
             {
@@ -128,6 +166,20 @@ namespace Darts_Score_Management.Services
 
                 await _turnService.AddThrowToTurnAsync(turn.Id, throwDto);
                 await UpdateStatisticsSafely(turn.Leg.Set.GameId, turn.PlayerId, throwDto);
+                lastValidThrow = throwDto; // Track the last valid throw
+            }
+            if (!gameState.IsBusted && turn.EndingScore == 0)
+            {
+                var game = await _gameService.GetGameByIdAsync(turn.Leg.Set.GameId);
+                if (game.Settings.MustFinishOnDouble && (lastValidThrow?.Multiplier != 2))
+                {
+                    gameState.IsBusted = true; // Invalid finish (not on double)
+                    gameState.Message = "Must finish on a double";
+                }
+                else
+                {
+                    await CheckLegCompletion(turn, gameState, lastValidThrow);
+                }
             }
 
             return gameState;
@@ -137,7 +189,7 @@ namespace Darts_Score_Management.Services
         {
             if (turn.EndingScore == 0)
             {
-                await CheckLegCompletion(turn, gameState);
+                await CheckLegCompletion(turn, gameState, null);
 
                 if (gameState.LegComplete)
                 {
@@ -151,10 +203,17 @@ namespace Darts_Score_Management.Services
             }
         }
 
-        private async Task CheckLegCompletion(Turn turn, GameStateDTO gameState)
+        private async Task CheckLegCompletion(Turn turn, GameStateDTO gameState, CreateThrowDTO lastThrow)
         {
+            // Verify the last throw meets the double requirement if needed
+            var game = await _gameService.GetGameByIdAsync(turn.Leg.Set.GameId);
+            if (game.Settings.MustFinishOnDouble && turn.EndingScore == 0 && lastThrow.Multiplier != 2)
+            {
+                throw new GameRuleViolationException("Leg must end on a double", "FinishOnDouble");
+            }
             await _legService.EndLegAsync(turn.LegId, turn.PlayerId);
             gameState.LegComplete = true;
+            gameState.Message = $"Leg {turn.LegId} completed by Player {turn.PlayerId}";
         }
     
 

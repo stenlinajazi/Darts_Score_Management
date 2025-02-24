@@ -76,7 +76,7 @@ namespace Darts_Score_Management.Controllers
         {
             try
             {
-                TurnDTO updatedTurn = null;
+                TurnDTO updatedTurn = new TurnDTO();
                 foreach (var throwDto in throws)
                 {
                     updatedTurn = await _turnService.AddThrowToTurnAsync(turnId, throwDto);

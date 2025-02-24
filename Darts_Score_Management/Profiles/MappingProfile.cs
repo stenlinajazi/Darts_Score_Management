@@ -82,6 +82,7 @@ namespace Darts_Score_Management.Profiles
             // Player mappings
             CreateMap<Player, PlayerDTO>().ReverseMap();
             CreateMap<UpsertPlayerDTO, Player>();
+            CreateMap<Player, PlayerStatsDTO>();
 
             // Game mappings
             CreateMap<Game, GameDTO>()
@@ -95,9 +96,11 @@ namespace Darts_Score_Management.Profiles
             // GamePlayer mappings
             CreateMap<GamePlayer, GamePlayerDTO>();
             CreateMap<GamePlayerDTO, GamePlayer>();
+            CreateMap<GamePlayer, GameStatisticsDTO>();
 
             // Statistic mappings
             CreateMap<Statistic, StatisticDTO>().ReverseMap();
+            CreateMap<Statistic, StatisticDTO>();
 
             // Set mappings
             CreateMap<Set, SetDTO>().ReverseMap();

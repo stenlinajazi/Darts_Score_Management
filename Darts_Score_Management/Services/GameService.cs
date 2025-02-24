@@ -17,38 +17,27 @@ namespace Darts_Score_Management.Services
             _gameRepository = gameRepository;
             _mapper = mapper;
         }
-
+        public async Task<IEnumerable<GameDTO>> GetAllGamesAsync()
+        {
+           var games = await _gameRepository.GetAllAsync();
+           return _mapper.Map<IEnumerable<GameDTO>>(games);
+        }
         public async Task<GameDTO> GetGameByIdAsync(int id)
         {
             var game = await _gameRepository.GetGameWithDetailsAsync(id);
             return _mapper.Map<GameDTO>(game);
         }
 
-        public async Task<IEnumerable<GameDTO>> GetAllGamesAsync()
-        {
-            var games = await _gameRepository.GetAllAsync();
-            return _mapper.Map<IEnumerable<GameDTO>>(games);
-        }
-
+      
         public async Task<GameDTO> CreateGameAsync(CreateGameDTO createGameDto)
         {
             if (createGameDto == null) throw new ArgumentNullException(nameof(createGameDto));
             if (createGameDto.PlayerIds == null || !createGameDto.PlayerIds.Any())
                 throw new ValidationException("At least one player is required");
 
-            var game = new Game
-            {
-                Type = createGameDto.Type,
-                StartingScore = createGameDto.StartingScore,
-                StartedAt = DateTime.UtcNow,
-                IsComplete = false,
-                Settings = new GameSettings
-                {
-                    MustFinishOnDouble = createGameDto.Settings.MustFinishOnDouble,
-                    SetsToWin = createGameDto.Settings.SetsToWin,
-                    LegsPerSet = createGameDto.Settings.LegsPerSet
-                }
-            };
+            var game = _mapper.Map<Game>(createGameDto);
+            game.StartedAt = DateTime.UtcNow;
+            game.IsComplete = false;
 
             //game.DeletedBy = string.Empty;
             //game.ModifiedBy = string.Empty;

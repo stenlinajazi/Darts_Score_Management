@@ -58,5 +58,13 @@ namespace Darts_Score_Management.Repositories
                 throw;
             }
         }
+
+        public async Task<Turn> GetLastTurnByLegAsync(int legId)
+        {
+            return await _context.Turns
+                .Where(t => t.LegId == legId)
+                .OrderByDescending(t => t.TurnNumber)
+                .FirstOrDefaultAsync();
+        }
     }
 }

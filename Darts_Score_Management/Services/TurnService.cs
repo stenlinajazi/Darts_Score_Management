@@ -5,6 +5,7 @@ using Darts_Score_Management.DTOs.Throw;
 using Darts_Score_Management.DTOs.Turn;
 using Darts_Score_Management.Interfaces.RepositoryInterfaces;
 using Darts_Score_Management.Interfaces.ServiceInterfaces;
+using Microsoft.EntityFrameworkCore;
 
 namespace Darts_Score_Management.Services
 {
@@ -77,6 +78,12 @@ namespace Darts_Score_Management.Services
             turn.Throws.Add(newThrow);
             await _turnRepository.UpdateAsync(turn);
             return _mapper.Map<TurnDTO>(turn);
+        }
+
+        public async Task<TurnDTO> GetLastTurnByLegAsync(int legId)
+        {
+            var turn = await _turnRepository.GetLastTurnByLegAsync(legId);
+            return  _mapper.Map<TurnDTO>(turn);
         }
     }
 }

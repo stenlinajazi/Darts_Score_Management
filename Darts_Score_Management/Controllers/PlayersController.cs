@@ -44,7 +44,7 @@ namespace Darts_Score_Management.Controllers
         }
 
         [HttpGet("{id}/stats")]
-        public async Task<ActionResult<PlayerDTO>> GetPlayerWithStats(int id)
+        public async Task<ActionResult<PlayerStatsDTO>> GetPlayerWithStats(int id)
         {
             try
             {

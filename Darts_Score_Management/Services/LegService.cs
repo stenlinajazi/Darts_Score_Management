@@ -18,10 +18,10 @@ namespace Darts_Score_Management.Services
             _mapper = mapper;
         }
 
-        public async Task<LegDTO> GetLegByIdAsync(int id)
+        public async Task<Leg> GetLegByIdAsync(int id)
         {
             var leg = await _legRepository.GetLegWithDetailsAsync(id);
-            return _mapper.Map<LegDTO>(leg);
+            return leg;
         }
 
         public async Task<LegDTO> CreateLegAsync(CreateLegDTO createLegDto)
