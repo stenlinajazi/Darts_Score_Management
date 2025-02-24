@@ -17,7 +17,7 @@ namespace Darts_Score_Management.DTOs.Turn
         [Required]
         public int StartingScore { get; set; }
 
-        [Required]
-        public List<CreateThrowDTO> Throws { get; set; }
+        //[Required]
+        //public List<CreateThrowDTO> Throws { get; set; }
     }
 }

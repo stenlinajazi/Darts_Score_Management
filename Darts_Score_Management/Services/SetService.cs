@@ -1,4 +1,4 @@
-﻿/*
+﻿
 using AutoMapper;
 using Darts_Score_Management.Data.Models;
 using Darts_Score_Management.DTOs.Set;
@@ -37,7 +37,7 @@ namespace Darts_Score_Management.Services
             if (set == null)
                 throw new KeyNotFoundException($"Set with id {id} not found");
 
-            set.WinnerId = winnerId;
+            set.WinnerPlayerId = winnerId;
             await _setRepository.UpdateAsync(set);
             return _mapper.Map<SetDTO>(set);
         }
@@ -49,4 +49,4 @@ namespace Darts_Score_Management.Services
         }
     }
 }
-*/
+

@@ -44,7 +44,9 @@ namespace Darts_Score_Management.Services
         {
             var player = await _playerRepository.GetByIdAsync(id);
             if (player == null)
+            {
                 throw new KeyNotFoundException($"Player with id {id} not found");
+            }
 
             _mapper.Map(upsertplayerDto, player);
             await _playerRepository.UpdateAsync(player);

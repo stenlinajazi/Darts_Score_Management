@@ -3,6 +3,7 @@ using Darts_Score_Management.Data.Models;
 using Darts_Score_Management.DTOs.Game;
 using Darts_Score_Management.Interfaces.RepositoryInterfaces;
 using Darts_Score_Management.Interfaces.ServiceInterfaces;
+using System.ComponentModel.DataAnnotations;
 
 namespace Darts_Score_Management.Services
 {
@@ -31,6 +32,10 @@ namespace Darts_Score_Management.Services
 
         public async Task<GameDTO> CreateGameAsync(CreateGameDTO createGameDto)
         {
+            if (createGameDto == null) throw new ArgumentNullException(nameof(createGameDto));
+            if (createGameDto.PlayerIds == null || !createGameDto.PlayerIds.Any())
+                throw new ValidationException("At least one player is required");
+
             var game = new Game
             {
                 Type = createGameDto.Type,
