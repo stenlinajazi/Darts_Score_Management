@@ -12,5 +12,6 @@ namespace Darts_Score_Management.Interfaces.ServiceInterfaces
         //Task GetTurnByIdAsync(int turnId);
         Task<TurnDTO> GetTurnByIdAsync(int turnId);
         Task<TurnDTO> GetLastTurnByLegAsync(int legId);
+        Task<TurnDTO> GetLastTurnByPlayerAndLegAsync(int playerId, int legId);
     }
 }

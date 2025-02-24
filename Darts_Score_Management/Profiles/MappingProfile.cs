@@ -104,11 +104,17 @@ namespace Darts_Score_Management.Profiles
 
             // Set mappings
             CreateMap<Set, SetDTO>().ReverseMap();
-            CreateMap<CreateSetDTO, Set>();
+            CreateMap<CreateSetDTO, Set>()
+                 .ForMember(dest => dest.Id, opt => opt.Ignore())
+                 .ForMember(dest => dest.Legs, opt => opt.Ignore())
+                 .ForMember(dest => dest.WinnerPlayerId, opt => opt.Ignore());
 
             // Leg mappings
             CreateMap<Leg, LegDTO>().ReverseMap();
-            CreateMap<CreateLegDTO, Leg>();
+            CreateMap<CreateLegDTO, Leg>()
+                .ForMember(dest => dest.Id, opt => opt.Ignore())
+                .ForMember(dest => dest.WinnerPlayerId, opt => opt.Ignore())
+                .ForMember(dest => dest.Turns, opt => opt.Ignore());
 
             // Turn mappings
             CreateMap<Turn, TurnDTO>();

@@ -88,11 +88,16 @@ namespace Darts_Score_Management.Services
 
                 // Determine the current player (based on turn order in the leg)
                 var lastTurnDto = await _turnService.GetLastTurnByLegAsync(legId);
-                Turn lastTurn = lastTurnDto == null ? null : _mapper.Map<Turn>(lastTurnDto); // Map TurnDTO to Turn
+                Turn lastTurn =  _mapper.Map<Turn>(lastTurnDto); // Map TurnDTO to Turn
 
                 int playerId = DetermineNextPlayer(leg, lastTurn);
                 int turnNumber = lastTurn?.TurnNumber + 1 ?? 1; // Increment turn number or start at 1
-                int startingScore = lastTurn?.EndingScore ?? leg.Set.Game.StartingScore; // Use previous ending score or game starting score
+                                                                                                            
+                // Get the last turn for the current player in this leg to determine their starting score
+                var lastPlayerTurnDto = await _turnService.GetLastTurnByPlayerAndLegAsync(playerId, legId);
+                Turn lastPlayerTurn = _mapper.Map<Turn>(lastPlayerTurnDto);
+
+                int startingScore = lastPlayerTurn?.EndingScore ?? leg.Set.Game.StartingScore;
 
                 // Create a new turn
                 var createTurnDto = new CreateTurnDTO

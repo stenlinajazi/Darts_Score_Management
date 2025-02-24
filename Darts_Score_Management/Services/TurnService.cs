@@ -85,5 +85,11 @@ namespace Darts_Score_Management.Services
             var turn = await _turnRepository.GetLastTurnByLegAsync(legId);
             return  _mapper.Map<TurnDTO>(turn);
         }
+
+        public async Task<TurnDTO> GetLastTurnByPlayerAndLegAsync(int playerId, int legId)
+        {
+            var turn = await _turnRepository.GetLastTurnByPlayerAndLegAsync(playerId, legId);
+            return _mapper.Map<TurnDTO>(turn);
+        }
     }
 }
