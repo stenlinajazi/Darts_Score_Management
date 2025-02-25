@@ -48,5 +48,12 @@ namespace Darts_Score_Management.Services
             var setLegs = legs.Where(l => l.SetId == setId);
             return _mapper.Map<IEnumerable<LegDTO>>(setLegs);
         }
+
+        public async Task<LegDTO> UpdateLegAsync(Leg leg)
+        {
+            await _legRepository.UpdateAsync(leg);
+            var updatedLeg = await _legRepository.GetByIdAsync(leg.Id); // Fetch the updated entity
+            return _mapper.Map<LegDTO>(updatedLeg);
+        }
     }
 }

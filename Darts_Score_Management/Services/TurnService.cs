@@ -13,11 +13,13 @@ namespace Darts_Score_Management.Services
     {
         private readonly ITurnRepository _turnRepository;
         private readonly IMapper _mapper;
+        private readonly IThrowRepository _throwRepository;
 
-        public TurnService(ITurnRepository turnRepository, IMapper mapper)
+        public TurnService(ITurnRepository turnRepository, IMapper mapper, IThrowRepository throwRepository)
         {
             _turnRepository = turnRepository;
             _mapper = mapper;
+            _throwRepository = throwRepository;
         }
 
         public async Task<TurnDTO> GetTurnByIdAsync(int turnId)
@@ -55,22 +57,40 @@ namespace Darts_Score_Management.Services
                 TurnId = turnId,
                 ThrowNumber = turn.Throws.Count + 1,
                 Segment = throwDto.Segment,
-                Multiplier = throwDto.Multiplier
+                Multiplier = throwDto.Multiplier,
+                IsBusted = false // Default to false, will be set to true if this throw busts
             };
 
-            // Calculate new score
-            var points = newThrow.Points;
-            var newScore = turn.EndingScore - points;
+            // Calculate points for this throw
+            int points = newThrow.Points;
 
-            // Check for bust
+            // Check if any previous throw in this turn has already caused a bust
+            bool previousBust = turn.Throws.Any(t => t.IsBusted);
+
+            if (previousBust)
+            {
+                // If a previous throw already busted, don't change the score but add the throw
+                turn.Throws.Add(newThrow);
+                await _turnRepository.UpdateAsync(turn);
+                return _mapper.Map<TurnDTO>(turn);
+            }
+
+            // Calculate new score after this throw
+            int newScore = turn.EndingScore - points;
+
+            // Check for bust on this specific throw
             if (newScore < 0)
             {
+                // Mark only this throw as busted
                 newThrow.IsBusted = true;
-                // Reset ending score to starting score if busted
+
+                // Reset turn score to starting score
                 turn.EndingScore = turn.StartingScore;
+                turn.TotalPoints = 0;
             }
             else
             {
+                // Update score if no bust occurs
                 turn.EndingScore = newScore;
                 turn.TotalPoints += points;
             }
@@ -90,6 +110,18 @@ namespace Darts_Score_Management.Services
         {
             var turn = await _turnRepository.GetLastTurnByPlayerAndLegAsync(playerId, legId);
             return _mapper.Map<TurnDTO>(turn);
+        }
+
+        public async Task<IEnumerable<ThrowDTO>> GetThrowsForTurnAsync(int turnId)
+        {
+            var throws = await _throwRepository.GetThrowsForTurnAsync(turnId);
+            return _mapper.Map<IEnumerable<ThrowDTO>>(throws);
+        }
+
+        public async Task<ThrowDTO> GetLastThrowForTurnAsync(int turnId)
+        {
+            var throws = await GetThrowsForTurnAsync(turnId);
+            return throws?.OrderByDescending(t => t.ThrowNumber).FirstOrDefault();
         }
     }
 }
