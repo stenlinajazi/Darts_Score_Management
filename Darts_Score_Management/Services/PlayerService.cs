@@ -64,13 +64,13 @@ namespace Darts_Score_Management.Services
             return _mapper.Map<IEnumerable<PlayerDTO>>(players);
         }
 
-        public async Task<PlayerDTO> GetPlayerWithStatsAsync(int id)
+        public async Task<PlayerStatsDTO> GetPlayerWithStatsAsync(int id)
         {
             var player = await _playerRepository.GetPlayerWithStatsAsync(id);
             if (player == null)
                 throw new KeyNotFoundException($"Player with id {id} not found");
 
-            return _mapper.Map<PlayerDTO>(player);
+            return _mapper.Map<PlayerStatsDTO>(player);
         }
     }
 }

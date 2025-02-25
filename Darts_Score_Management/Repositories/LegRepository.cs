@@ -15,6 +15,9 @@ namespace Darts_Score_Management.Repositories
                 .Include(l => l.Turns)
                     .ThenInclude(t => t.Throws)
                 .Include(l => l.Winner)
+                .Include(l => l.Set) 
+                     .ThenInclude(s => s.Game) 
+                          .ThenInclude(g => g.GamePlayers)
                 .FirstOrDefaultAsync(l => l.Id == id);
         }
 

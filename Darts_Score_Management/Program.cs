@@ -23,6 +23,7 @@ builder.Services.AddScoped<IStatisticRepository, StatisticRepository>();
 builder.Services.AddScoped<ISetRepository, SetRepository>();
 builder.Services.AddScoped<ILegRepository, LegRepository>();
 builder.Services.AddScoped<ITurnRepository, TurnRepository>();
+builder.Services.AddScoped<IThrowRepository, ThrowRepository>();
 
 
 // Register services

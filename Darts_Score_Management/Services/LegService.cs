@@ -18,10 +18,10 @@ namespace Darts_Score_Management.Services
             _mapper = mapper;
         }
 
-        public async Task<LegDTO> GetLegByIdAsync(int id)
+        public async Task<Leg> GetLegByIdAsync(int id)
         {
             var leg = await _legRepository.GetLegWithDetailsAsync(id);
-            return _mapper.Map<LegDTO>(leg);
+            return leg;
         }
 
         public async Task<LegDTO> CreateLegAsync(CreateLegDTO createLegDto)
@@ -47,6 +47,13 @@ namespace Darts_Score_Management.Services
             var legs = await _legRepository.GetAllAsync();
             var setLegs = legs.Where(l => l.SetId == setId);
             return _mapper.Map<IEnumerable<LegDTO>>(setLegs);
+        }
+
+        public async Task<LegDTO> UpdateLegAsync(Leg leg)
+        {
+            await _legRepository.UpdateAsync(leg);
+            var updatedLeg = await _legRepository.GetByIdAsync(leg.Id); // Fetch the updated entity
+            return _mapper.Map<LegDTO>(updatedLeg);
         }
     }
 }

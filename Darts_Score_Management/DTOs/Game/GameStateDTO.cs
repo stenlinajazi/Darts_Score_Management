@@ -6,6 +6,7 @@
         public bool LegComplete { get; set; }
         public bool SetComplete { get; set; }
         public bool GameComplete { get; set; }
+        public string Message { get; set; }
 
     }
 }

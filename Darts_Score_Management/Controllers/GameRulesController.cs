@@ -33,17 +33,18 @@ namespace Darts_Score_Management.Controllers
             }
         }
 
-        [HttpPost("{turnId}/throws")]
-        public async Task<ActionResult<GameStateDTO>> ProcessTurn(int turnId, [FromBody] List<CreateThrowDTO> throws)
+        [HttpPost("{legId}/throws")]
+        public async Task<ActionResult<GameStateDTO>> ProcessTurn(int legId, [FromBody] List<CreateThrowDTO> throws)
         {
             try
             {
-                if (throws == null || !throws.Any() || throws.Count > 3)
+                if (throws == null || throws.Count != 3)
                 {
-                    return BadRequest(new { message = "A turn must contain between 1 and 3 throws" });
+                    return BadRequest(new { message = "A turn must contain exactly 3 throws" });
                 }
 
-                var gameState = await _gameRulesEngine.ProcessTurn(turnId, throws);
+
+                var gameState = await _gameRulesEngine.ProcessTurnForLeg(legId, throws);
                 return Ok(gameState);
             }
             catch (GameRuleViolationException ex)
@@ -52,7 +53,7 @@ namespace Darts_Score_Management.Controllers
             }
             catch (StatisticsUpdateException ex)
             {
-                // Log the statistics update failure but don't fail the request
+     
                 return Ok(new
                 {
                     message = "Turn processed successfully but statistics update failed",
