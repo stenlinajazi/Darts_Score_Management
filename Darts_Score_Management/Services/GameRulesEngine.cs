@@ -124,6 +124,10 @@ namespace Darts_Score_Management.Services
             if (leg == null)
                 throw new ArgumentException($"Leg with ID {legId} not found");
 
+            // Check if the leg is already complete before setting up a new turn
+            if (leg.WinnerPlayerId != null)
+                throw new GameRuleViolationException($"Leg {legId} is already complete and cannot accept further throws", "LegComplete");
+
             var lastTurnDto = await _turnService.GetLastTurnByLegAsync(legId);
             Turn lastTurn = _mapper.Map<Turn>(lastTurnDto);
 
