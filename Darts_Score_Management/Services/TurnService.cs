@@ -62,10 +62,10 @@ namespace Darts_Score_Management.Services
             };
 
             // Calculate points for this throw
-            int points = newThrow.Points;
+            int points = newThrow.Points;//Why do we need to calculate again the points?
 
             // Check if any previous throw in this turn has already caused a bust
-            bool previousBust = turn.Throws.Any(t => t.IsBusted);
+            bool previousBust = turn.Throws.Any(t => t.IsBusted);//Why do we check again for bust condition when the throws that we passed this method we chacked before and they werent busts
 
             if (previousBust)
             {
@@ -79,10 +79,10 @@ namespace Darts_Score_Management.Services
             int newScore = turn.EndingScore - points;
 
             // Check for bust on this specific throw
-            if (newScore < 0)
+            if (newScore < 0)//Why do we still continoue to check for bust
             {
                 // Mark only this throw as busted
-                newThrow.IsBusted = true;
+                newThrow.IsBusted = true;//Wasnt this set using the for loop in ProcesThrowss method and getting the index of the throw which did it
 
                 // Reset turn score to starting score
                 turn.EndingScore = turn.StartingScore;

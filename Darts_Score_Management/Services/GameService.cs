@@ -52,7 +52,7 @@ namespace Darts_Score_Management.Services
             var gamePlayers = createGameDto.PlayerIds.Select((playerId, index) => new GamePlayer
             {
                 PlayerId = playerId,
-                TurnOrder = index + 1
+                TurnOrder = index + 1 // Initialize TurnOrder based on the order of PlayerIds in the list
             }).ToList();
 
             var createdGame = await _gameRepository.CreateGameWithPlayersAsync(game, gamePlayers);

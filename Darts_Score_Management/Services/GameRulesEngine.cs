@@ -50,24 +50,24 @@ namespace Darts_Score_Management.Services
         }
 
         //Validates a single dart throw against game rules (e.g., valid segments, bust conditions, finish-on-double rule) before it’s processed
-        public async Task<Data.Models.ValidationResult> ValidateThrow(CreateThrowDTO throwDto, int turnId)
+        public async Task<ValidationResult> ValidateThrow(CreateThrowDTO throwDto, int turnId)
         {
             if (throwDto == null)
-                return new Data.Models.ValidationResult { IsValid = false, Message = "Throw data is required" };
+                return new ValidationResult { IsValid = false, Message = "Throw data is required" };
 
             var turn = await _turnService.GetTurnByIdAsync(turnId);
             if (turn == null)
-                return new Data.Models.ValidationResult { IsValid = false, Message = "Turn not found" };
+                return new ValidationResult { IsValid = false, Message = "Turn not found" };
             if (turn.Leg == null)
-                return new Data.Models.ValidationResult { IsValid = false, Message = "Turn is not properly associated with a leg" };
+                return new ValidationResult { IsValid = false, Message = "Turn is not properly associated with a leg" };
 
             if (turn.Leg.Set == null)
-                return new Data.Models.ValidationResult { IsValid = false, Message = "Leg is not properly associated with a set" };
+                return new ValidationResult { IsValid = false, Message = "Leg is not properly associated with a set" };
 
 
             // Check if it's a valid dart segment and multiplier
             if (!IsValidDartSegment(throwDto.Segment, throwDto.Multiplier))
-                return new Data.Models.ValidationResult { IsValid = false, Message = "Invalid dart segment or multiplier" };
+                return new ValidationResult { IsValid = false, Message = "Invalid dart segment or multiplier" };
 
             // Calculate potential score
             int points = throwDto.Segment * throwDto.Multiplier;
@@ -75,14 +75,14 @@ namespace Darts_Score_Management.Services
 
             // Check for bust conditions
             if (newScore < 0)
-                return new Data.Models.ValidationResult { IsValid = false, Message = "Bust - score would go below 0" };
+                return new ValidationResult { IsValid = false, Message = "Bust - score would go below 0" };
 
             // Check finish on double rule if applicable
             var game = await _gameService.GetGameByIdAsync(turn.Leg.Set.GameId);
             if (game.Settings.MustFinishOnDouble && newScore == 0 && throwDto.Multiplier != 2)
-                return new Data.Models.ValidationResult { IsValid = false, Message = "Must finish on a double" };
+                return new ValidationResult { IsValid = false, Message = "Must finish on a double" };
 
-            return new Data.Models.ValidationResult { IsValid = true };
+            return new ValidationResult { IsValid = true };
         }
 
         //Processes a turn (up to 3 throws), validates it, updates the game state, and checks for completion (leg, set, game)
@@ -95,14 +95,15 @@ namespace Darts_Score_Management.Services
                 if (leg == null)
                     throw new ArgumentException($"Leg with ID {legId} not found");
 
-                // Determine the current player (based on turn order in the leg)
+                //Get the last turn played in the leg (regardless of which player)
+                //Use that to determine who should play next
                 var lastTurnDto = await _turnService.GetLastTurnByLegAsync(legId);
                 Turn lastTurn =  _mapper.Map<Turn>(lastTurnDto); // Map TurnDTO to Turn
 
                 int playerId = DetermineNextPlayer(leg, lastTurn);
                 int turnNumber = lastTurn?.TurnNumber + 1 ?? 1; // Increment turn number or start at 1
-                                                                                                            
-                // Get the last turn for the current player in this leg to determine their starting score
+
+                //Specifically get the last turn for the determined player to know their starting score
                 var lastPlayerTurnDto = await _turnService.GetLastTurnByPlayerAndLegAsync(playerId, legId);
                 Turn lastPlayerTurn = _mapper.Map<Turn>(lastPlayerTurnDto);
 
@@ -154,12 +155,12 @@ namespace Darts_Score_Management.Services
         private int DetermineNextPlayer(Leg leg, Turn lastTurn)
         {
             // Logic to determine the next player based on turn order in the leg
-            var gamePlayers = leg.Set.Game.GamePlayers.OrderBy(gp => gp.TurnOrder).ToList();
+            var gamePlayers = leg.Set.Game.GamePlayers.OrderBy(gp => gp.TurnOrder).ToList();//retrieve all players in the game ordered by their turn order
             if (lastTurn == null)
                 return gamePlayers[0].PlayerId; // First turn, start with lowest TurnOrder
 
             int currentPlayerIndex = gamePlayers.FindIndex(gp => gp.PlayerId == lastTurn.PlayerId);
-            int nextIndex = (currentPlayerIndex + 1) % gamePlayers.Count;
+            int nextIndex = (currentPlayerIndex + 1) % gamePlayers.Count; // The modulo operation ensures that after the last player, the index wraps around to the first player, maintaining a circular order
             return gamePlayers[nextIndex].PlayerId;
         }
 
@@ -172,6 +173,7 @@ namespace Darts_Score_Management.Services
             int bustThrowIndex = -1;
 
             // Single pass: Validate and track bust status for all throws before applying
+            int simulatedScore = turn.EndingScore;
             for (int i = 0; i < throws.Count; i++)
             {
                 var throwDto = throws[i];
@@ -186,7 +188,22 @@ namespace Darts_Score_Management.Services
                     gameState.Message = validation.Message;
                     break;
                 }
+                // Simulate the cumulative score for bust detection
+                int points = throwDto.Segment * throwDto.Multiplier; //These two lines are also done in the ValidateThrow method(maybe remove it from there since it should be only about validation)
+                int newScore = simulatedScore - points;
+                if (newScore < 0)  //checking for bust is done here but is also done in the ValidateThrow method(we also have a duplication of code from lines 182 - 190)I think in the code this does in fact the check and the check in ValidateThrow doesnt work
+                {
+                    bustDetected = true;
+                    bustingThrow = throwDto;
+                    bustThrowIndex = i;
+                    gameState.IsBusted = true;
+                    gameState.Message = "Bust - score would go below 0";
+                    break;
+                }
+                simulatedScore = newScore;
             }
+
+
 
             // Process throws within the transaction scope (assumed from ProcessTurnForLeg)
             if (bustDetected)
@@ -273,7 +290,7 @@ namespace Darts_Score_Management.Services
             return gameState;
         }
 
-        private async Task CheckAndUpdateGameCompletion(Turn turn, GameStateDTO gameState)
+        private async Task CheckAndUpdateGameCompletion(Turn turn, GameStateDTO gameState) 
         {
             if (turn.EndingScore == 0)
             {
@@ -291,7 +308,7 @@ namespace Darts_Score_Management.Services
             }
         }
 
-        private async Task CheckLegCompletion(Turn turn, GameStateDTO gameState, ThrowDTO lastThrow)
+        private async Task CheckLegCompletion(Turn turn, GameStateDTO gameState, ThrowDTO lastThrow)//Its called in line 285 and in the method above  Why?Is 1 time not enough
         {
             // Verify the last throw meets the double requirement if needed
             var game = await _gameService.GetGameByIdAsync(turn.Leg.Set.GameId);
@@ -372,7 +389,7 @@ namespace Darts_Score_Management.Services
             }
         }
 
-        private async Task<StatisticDTO> UpdatePPDStatistic(IEnumerable<StatisticDTO> stats, int gamePlayerId, CreateThrowDTO throwDto)
+        private async Task<StatisticDTO> UpdatePPDStatistic(IEnumerable<StatisticDTO> stats, int gamePlayerId, CreateThrowDTO throwDto)//Needs to be implemented
         {
             var ppdStat = stats.FirstOrDefault(s => s.Type == StatisticType.PPD) ??
                           new StatisticDTO { Type = StatisticType.PPD, Value = "0", GamePlayerId = gamePlayerId };
@@ -415,12 +432,12 @@ namespace Darts_Score_Management.Services
             }
         }
 
-             private bool IsValidDartSegment(int segment, int multiplier)
+        private bool IsValidDartSegment(int segment, int multiplier)
         {
-            if (segment < 1 || (segment > 20 && segment != 25)) return false;
-            if (multiplier < 1 || multiplier > 3) return false;
-            if (segment == 25 && multiplier > 2) return false; // Bullseye can only be single or double
-            return true;
+           if (segment < 1 || (segment > 20 && segment != 25)) return false;
+           if (multiplier < 1 || multiplier > 3) return false;
+           if (segment == 25 && multiplier > 2) return false; // Bullseye can only be single or double
+           return true;
         }
 
         private async Task<StatisticDTO> Update140PlusStatistic(IEnumerable<StatisticDTO> stats, int gamePlayerId)
