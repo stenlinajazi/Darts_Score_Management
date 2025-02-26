@@ -58,11 +58,8 @@ namespace Darts_Score_Management.Services
             var turn = await _turnService.GetTurnByIdAsync(turnId);
             if (turn == null)
                 return new ValidationResult { IsValid = false, Message = "Turn not found" };
-            if (turn.Leg == null)
-                return new ValidationResult { IsValid = false, Message = "Turn is not properly associated with a leg" };
-
-            if (turn.Leg.Set == null)
-                return new ValidationResult { IsValid = false, Message = "Leg is not properly associated with a set" };
+            if (turn.Leg == null || turn.Leg.Set == null)
+                return new ValidationResult { IsValid = false, Message = "Invalid turn relationships" };
 
 
             // Check if it's a valid dart segment and multiplier
@@ -70,7 +67,7 @@ namespace Darts_Score_Management.Services
                 return new ValidationResult { IsValid = false, Message = "Invalid dart segment or multiplier" };
 
             // Calculate potential score
-            int points = throwDto.Segment * throwDto.Multiplier;
+            int points = CalculatePoints(throwDto.Segment, throwDto.Multiplier);
             int newScore = turn.EndingScore - points;
 
             // Check for bust conditions
@@ -78,10 +75,10 @@ namespace Darts_Score_Management.Services
                 return new ValidationResult { IsValid = false, Message = "Bust - score would go below 0" };
 
             // Check finish on double rule if applicable
-            var game = await _gameService.GetGameByIdAsync(turn.Leg.Set.GameId);
-            if (game.Settings.MustFinishOnDouble && newScore == 0 && throwDto.Multiplier != 2)
+            var gameDto = await _gameService.GetGameByIdAsync(turn.Leg.Set.GameId);
+            var game = _mapper.Map<Game>(gameDto);
+            if (newScore == 0 && gameDto.Settings.MustFinishOnDouble && throwDto.Multiplier != 2)
                 return new ValidationResult { IsValid = false, Message = "Must finish on a double" };
-
             return new ValidationResult { IsValid = true };
         }
 
@@ -91,54 +88,23 @@ namespace Darts_Score_Management.Services
             using var transaction = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled);
             try
             {
-                var leg = await _legService.GetLegByIdAsync(legId);
-                if (leg == null)
-                    throw new ArgumentException($"Leg with ID {legId} not found");
+                if (throws == null || throws.Count != 3)
+                    throw new GameRuleViolationException("A turn must contain exactly 3 throws", "ThrowCount");
 
-                //Get the last turn played in the leg (regardless of which player)
-                //Use that to determine who should play next
-                var lastTurnDto = await _turnService.GetLastTurnByLegAsync(legId);
-                Turn lastTurn =  _mapper.Map<Turn>(lastTurnDto); // Map TurnDTO to Turn
-
-                int playerId = DetermineNextPlayer(leg, lastTurn);
-                int turnNumber = lastTurn?.TurnNumber + 1 ?? 1; // Increment turn number or start at 1
-
-                //Specifically get the last turn for the determined player to know their starting score
-                var lastPlayerTurnDto = await _turnService.GetLastTurnByPlayerAndLegAsync(playerId, legId);
-                Turn lastPlayerTurn = _mapper.Map<Turn>(lastPlayerTurnDto);
-
-                int startingScore = lastPlayerTurn?.EndingScore ?? leg.Set.Game.StartingScore;
-
-                // Create a new turn
-                var createTurnDto = new CreateTurnDTO
-                {
-                    LegId = legId,
-                    PlayerId = playerId,
-                    TurnNumber = turnNumber,
-                    StartingScore = startingScore
-                };
-                var turnDto = await _turnService.CreateTurnAsync(createTurnDto);
-                var turn = _mapper.Map<Turn>(turnDto);
-
-
+                var turn = await SetupNewTurn(legId);
 
                 // Validate turn
                 if (!await _validationService.ValidateTurnOrder(turn.Id, turn.PlayerId))
                     throw new GameRuleViolationException("Invalid turn order", "TurnOrder");
-
-                // Ensure exactly 3 throws
-                if (throws.Count != 3)
-                    throw new GameRuleViolationException("A turn must contain exactly 3 throws", "ThrowCount");
-
 
                 if (!await _validationService.ValidateMaximumThrows(turn.Id))
                     throw new GameRuleViolationException("Maximum throws exceeded", "MaxThrows");
 
                 var gameState = await ProcessThrows(turn, throws);
 
-                if (!gameState.IsBusted)
+                if (!gameState.IsBusted && gameState.LegComplete)
                 {
-                    await CheckAndUpdateGameCompletion(turn, gameState);
+                    await CheckForSetAndGameCompletion(turn, gameState);
                 }
 
                 transaction.Complete();
@@ -151,6 +117,201 @@ namespace Darts_Score_Management.Services
                 throw;
             }
         }
+        // Creates a new turn for the given leg
+        private async Task<Turn> SetupNewTurn(int legId)
+        {
+            var leg = await _legService.GetLegByIdAsync(legId);
+            if (leg == null)
+                throw new ArgumentException($"Leg with ID {legId} not found");
+
+            var lastTurnDto = await _turnService.GetLastTurnByLegAsync(legId);
+            Turn lastTurn = _mapper.Map<Turn>(lastTurnDto);
+
+            int playerId = DetermineNextPlayer(leg, lastTurn);
+            int turnNumber = lastTurn?.TurnNumber + 1 ?? 1;
+
+            // Get starting score for this player
+            var lastPlayerTurnDto = await _turnService.GetLastTurnByPlayerAndLegAsync(playerId, legId);
+            Turn lastPlayerTurn = _mapper.Map<Turn>(lastPlayerTurnDto);
+            int startingScore = lastPlayerTurn?.EndingScore ?? leg.Set.Game.StartingScore;
+
+            // Create the turn
+            var createTurnDto = new CreateTurnDTO
+            {
+                LegId = legId,
+                PlayerId = playerId,
+                TurnNumber = turnNumber,
+                StartingScore = startingScore
+            };
+
+            var turnDto = await _turnService.CreateTurnAsync(createTurnDto);
+            return _mapper.Map<Turn>(turnDto);
+        }
+        // Process all throws in a turn
+        private async Task<GameStateDTO> ProcessThrows(Turn turn, List<CreateThrowDTO> throws)
+        {
+            var gameState = new GameStateDTO();
+            // Analyze throws to detect any busts without modifying data
+            var bustAnalysis = AnalyzeThrowsForBust(turn, throws);
+
+            // Process throws based on bust status
+            if (bustAnalysis.HasBust)
+            {
+                await ProcessBustedTurn(turn, throws, bustAnalysis.BustIndex, bustAnalysis.BustMessage, gameState);
+            }
+            else
+            {
+                await ProcessSuccessfulTurn(turn, throws, gameState);
+            }
+            return gameState;
+        }
+
+
+        // Analyze throws for any potential busts without modifying data
+        private BustAnalysisResult AnalyzeThrowsForBust(Turn turn, List<CreateThrowDTO> throws)
+        {
+            int simulatedScore = turn.StartingScore;
+
+            for (int i = 0; i < throws.Count; i++)
+            {
+                var throwDto = throws[i];
+                int points = CalculatePoints(throwDto.Segment, throwDto.Multiplier);
+                int newScore = simulatedScore - points;
+
+                // Check for bust conditions
+                if (newScore < 0)
+                {
+                    return new BustAnalysisResult
+                    {
+                        HasBust = true,
+                        BustIndex = i,
+                        BustMessage = "Bust - score would go below 0"
+                    };
+                }
+
+                // Check for finish-on-double rule
+                if (newScore == 0)
+                {
+                    var game = _gameService.GetGameByIdAsync(turn.Leg.Set.GameId).Result;
+                    if (game.Settings.MustFinishOnDouble && throwDto.Multiplier != 2)
+                    {
+                        return new BustAnalysisResult
+                        {
+                            HasBust = true,
+                            BustIndex = i,
+                            BustMessage = "Must finish on a double"
+                        };
+                    }
+                }
+
+                simulatedScore = newScore;
+            }
+
+            return new BustAnalysisResult { HasBust = false };
+        }
+
+
+        // Process a turn that has a bust
+        private async Task ProcessBustedTurn(Turn turn, List<CreateThrowDTO> throws, int bustIndex, string bustMessage, GameStateDTO gameState)
+        {
+            // Reset turn score
+            var turnToUpdate = await _turnRepository.GetByIdAsync(turn.Id);
+            turnToUpdate.EndingScore = turnToUpdate.StartingScore;
+            turnToUpdate.TotalPoints = 0;
+
+            // Process throws up to and including the bust
+            for (int i = 0; i < throws.Count; i++)
+            {
+                var throwDto = throws[i];
+                await _turnService.AddThrowToTurnAsync(turn.Id, throwDto);
+
+                // Mark the busting throw
+                if (i == bustIndex)
+                {
+                    await MarkThrowAsBusted(turn.Id);
+                }
+
+                // Always update statistics
+                await UpdateStatisticsSafely(turn.Leg.Set.GameId, turn.PlayerId, throwDto);
+            }
+
+            await _turnRepository.UpdateAsync(turnToUpdate);
+
+            // Set game state for bust
+            gameState.IsBusted = true;
+            gameState.Message = bustMessage;
+        }
+
+
+        private async Task MarkThrowAsBusted(int turnId)
+        {
+            var lastThrow = await _turnService.GetLastThrowForTurnAsync(turnId);
+            if (lastThrow != null)
+            {
+                var throwEntity = await _throwRepository.GetByIdAsync(lastThrow.Id);
+                if (throwEntity != null)
+                {
+                    throwEntity.IsBusted = true;
+                    await _throwRepository.UpdateAsync(throwEntity);
+                }
+            }
+        }
+
+        // Process a turn with no busts
+        private async Task ProcessSuccessfulTurn(Turn turn, List<CreateThrowDTO> throws, GameStateDTO gameState)
+        {
+            // Process all throws
+            foreach (var throwDto in throws)
+            {
+                await _turnService.AddThrowToTurnAsync(turn.Id, throwDto);
+                await UpdateStatisticsSafely(turn.Leg.Set.GameId, turn.PlayerId, throwDto);
+            }
+
+            // Reload turn to get final state
+            var updatedTurnDto = await _turnService.GetTurnByIdAsync(turn.Id);
+            var updatedTurn = _mapper.Map<Turn>(updatedTurnDto);
+
+            // Check for win condition
+            if (updatedTurn.EndingScore == 0)
+            {
+                var lastThrow = await _turnService.GetLastThrowForTurnAsync(turn.Id);
+                await CompleteLeg(updatedTurn, gameState, lastThrow);
+            }
+        }
+
+        // Unified leg completion method
+        private async Task CompleteLeg(Turn turn, GameStateDTO gameState, ThrowDTO lastThrow)
+        {
+            // Update leg with winner
+            var leg = await _legService.GetLegByIdAsync(turn.LegId);
+            if (leg != null)
+            {
+                leg.WinnerPlayerId = turn.PlayerId;
+                await _legService.UpdateLegAsync(leg);
+            }
+
+            gameState.LegComplete = true;
+            gameState.Message = $"Leg {turn.LegId} completed by Player {turn.PlayerId}";
+        }
+
+        // Check for set and game completion
+        private async Task CheckForSetAndGameCompletion(Turn turn, GameStateDTO gameState)
+        {
+            if (gameState.LegComplete)
+            {
+                await CheckSetCompletion(turn, gameState);
+
+                if (gameState.SetComplete)
+                {
+                    await CheckGameCompletion(turn, gameState);
+                }
+            }
+        }
+
+        private int CalculatePoints(int segment, int multiplier)
+        {
+            return segment * multiplier;
+        }
 
         private int DetermineNextPlayer(Leg leg, Turn lastTurn)
         {
@@ -162,132 +323,6 @@ namespace Darts_Score_Management.Services
             int currentPlayerIndex = gamePlayers.FindIndex(gp => gp.PlayerId == lastTurn.PlayerId);
             int nextIndex = (currentPlayerIndex + 1) % gamePlayers.Count; // The modulo operation ensures that after the last player, the index wraps around to the first player, maintaining a circular order
             return gamePlayers[nextIndex].PlayerId;
-        }
-
-
-        private async Task<GameStateDTO> ProcessThrows(Turn turn, List<CreateThrowDTO> throws)
-        {
-            var gameState = new GameStateDTO();
-            bool bustDetected = false;
-            CreateThrowDTO bustingThrow = null;
-            int bustThrowIndex = -1;
-
-            // Single pass: Validate and track bust status for all throws before applying
-            int simulatedScore = turn.EndingScore;
-            for (int i = 0; i < throws.Count; i++)
-            {
-                var throwDto = throws[i];
-                var validation = await ValidateThrow(throwDto, turn.Id);
-
-                if (!validation.IsValid)
-                {
-                    bustDetected = true;
-                    bustingThrow = throwDto;
-                    bustThrowIndex = i;
-                    gameState.IsBusted = true;
-                    gameState.Message = validation.Message;
-                    break;
-                }
-                // Simulate the cumulative score for bust detection
-                int points = throwDto.Segment * throwDto.Multiplier; //These two lines are also done in the ValidateThrow method(maybe remove it from there since it should be only about validation)
-                int newScore = simulatedScore - points;
-                if (newScore < 0)  //checking for bust is done here but is also done in the ValidateThrow method(we also have a duplication of code from lines 182 - 190)I think in the code this does in fact the check and the check in ValidateThrow doesnt work
-                {
-                    bustDetected = true;
-                    bustingThrow = throwDto;
-                    bustThrowIndex = i;
-                    gameState.IsBusted = true;
-                    gameState.Message = "Bust - score would go below 0";
-                    break;
-                }
-                simulatedScore = newScore;
-            }
-
-
-
-            // Process throws within the transaction scope (assumed from ProcessTurnForLeg)
-            if (bustDetected)
-            {
-                // Reset score and total points for the entire turn if any throw busts
-                var turnToUpdate = await _turnRepository.GetByIdAsync(turn.Id);
-                turnToUpdate.EndingScore = turnToUpdate.StartingScore;
-                turnToUpdate.TotalPoints = 0;
-
-                // Process each throw, marking only the busting throw as IsBusted
-                for (int i = 0; i < throws.Count; i++)
-                {
-                    var throwDto = throws[i];
-                    var processedThrow = new CreateThrowDTO
-                    {
-                        Segment = throwDto.Segment,
-                        Multiplier = throwDto.Multiplier
-                    };
-
-                    // Use AddThrowToTurnAsync, which will handle IsBusted based on the bust logic
-                    await _turnService.AddThrowToTurnAsync(turn.Id, processedThrow);
-
-                    // If this is the busting throw, ensure it’s marked as busted in the database
-                    if (i == bustThrowIndex)
-                    {
-                        // Fetch the last throw added to verify/update IsBusted
-                        var lastThrow = await _turnService.GetLastThrowForTurnAsync(turn.Id);
-                        if (lastThrow != null)
-                        {
-                            var throwEntity = await _throwRepository.GetByIdAsync(lastThrow.Id);
-                            if (throwEntity != null)
-                            {
-                                throwEntity.IsBusted = true;
-                                await _throwRepository.UpdateAsync(throwEntity);
-                            }
-                        }
-                    }
-
-                    // Update statistics even for busted turns
-                    await UpdateStatisticsSafely(turn.Leg.Set.GameId, turn.PlayerId, throwDto);
-                }
-
-                await _turnRepository.UpdateAsync(turnToUpdate); // Save the turn reset
-            }
-            else
-            {
-                // Process all throws normally if no bust occurs
-                foreach (var throwDto in throws)
-                {
-                    await _turnService.AddThrowToTurnAsync(turn.Id, throwDto);
-                    await UpdateStatisticsSafely(turn.Leg.Set.GameId, turn.PlayerId, throwDto);
-                }
-
-                // Reload the turn to get the latest state
-                var updatedTurnDto = await _turnService.GetTurnByIdAsync(turn.Id);
-                var updatedTurn = _mapper.Map<Turn>(updatedTurnDto);
-
-                // Check if ending score is exactly 0 (potential win)
-                if (updatedTurn.EndingScore == 0)
-                {
-                    var lastThrow = await _turnService.GetLastThrowForTurnAsync(turn.Id);
-                    var game = await _gameService.GetGameByIdAsync(turn.Leg.Set.GameId);
-
-                    // Check finish-on-double rule if applicable
-                    if (game.Settings.MustFinishOnDouble && lastThrow?.Multiplier != 2)
-                    {
-                        gameState.IsBusted = true;
-                        gameState.Message = "Must finish on a double";
-
-                        // Reset score if finishing throw wasn't a double
-                        var turnToUpdate = await _turnRepository.GetByIdAsync(turn.Id);
-                        turnToUpdate.EndingScore = turnToUpdate.StartingScore;
-                        turnToUpdate.TotalPoints = 0;
-                        await _turnRepository.UpdateAsync(turnToUpdate);
-                    }
-                    else
-                    {
-                        // Valid win condition
-                        await CheckLegCompletion(updatedTurn, gameState, lastThrow);
-                    }
-                }
-            }
-
-            return gameState;
         }
 
         private async Task CheckAndUpdateGameCompletion(Turn turn, GameStateDTO gameState) 
@@ -308,8 +343,8 @@ namespace Darts_Score_Management.Services
             }
         }
 
-        private async Task CheckLegCompletion(Turn turn, GameStateDTO gameState, ThrowDTO lastThrow)//Its called in line 285 and in the method above  Why?Is 1 time not enough
-        {
+         private async Task CheckLegCompletion(Turn turn, GameStateDTO gameState, ThrowDTO lastThrow)//Its called in line 285 and in the method above  Why?Is 1 time not enough
+         {
             // Verify the last throw meets the double requirement if needed
             var game = await _gameService.GetGameByIdAsync(turn.Leg.Set.GameId);
             if (game.Settings.MustFinishOnDouble && turn.EndingScore == 0 && lastThrow.Multiplier != 2)
@@ -325,11 +360,11 @@ namespace Darts_Score_Management.Services
             }
             gameState.LegComplete = true;
             gameState.Message = $"Leg {turn.LegId} completed by Player {turn.PlayerId} with double finish on {lastThrow?.Segment} (multiplier: {lastThrow?.Multiplier})";
-        }
+         }
     
 
-    private async Task CheckSetCompletion(Turn turn, GameStateDTO gameState)
-        {
+         private async Task CheckSetCompletion(Turn turn, GameStateDTO gameState)
+         {
             var leg = await _legService.GetLegByIdAsync(turn.LegId);
             var set = await _setService.GetSetByIdAsync(leg.SetId);
             var legsWon = set.Legs.Count(l => l.WinnerPlayerId == turn.PlayerId);
@@ -339,7 +374,7 @@ namespace Darts_Score_Management.Services
                 await _setService.EndSetAsync(set.Id, turn.PlayerId);
                 gameState.SetComplete = true;
             }
-        }
+         }
 
         private async Task CheckGameCompletion(Turn turn, GameStateDTO gameState)
         {
