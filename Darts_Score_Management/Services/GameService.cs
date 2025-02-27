@@ -41,10 +41,30 @@ namespace Darts_Score_Management.Services
             if (createGameDto == null) throw new ArgumentNullException(nameof(createGameDto));
             if (createGameDto.PlayerIds == null || !createGameDto.PlayerIds.Any())
                 throw new ValidationException("At least one player is required");
+            if (createGameDto.Settings == null)
+                throw new ValidationException("Game settings are required");
+            if (createGameDto.Settings.SetsToWin < 1)
+                throw new ValidationException("SetsToWin must be at least 1");
+            if (createGameDto.Settings.LegsPerSet < 1)
+                throw new ValidationException("LegsPerSet must be at least 1");
+            if (createGameDto.Settings.SetsToWin > 3)
+                throw new ValidationException("SetsToWin cannot exceed 3");
+            if (createGameDto.Settings.LegsPerSet > 3)
+                throw new ValidationException("LegsPerSet cannot exceed 3");
 
             var game = _mapper.Map<Game>(createGameDto);
             game.StartedAt = DateTime.UtcNow;
             game.IsComplete = false;
+
+            if (game.Settings == null)
+            {
+                game.Settings = new GameSettings
+                {
+                    MustFinishOnDouble = createGameDto.Settings.MustFinishOnDouble,
+                    SetsToWin = createGameDto.Settings.SetsToWin,
+                    LegsPerSet = createGameDto.Settings.LegsPerSet
+                };
+            }
 
             //game.DeletedBy = string.Empty;
             //game.ModifiedBy = string.Empty;
@@ -52,7 +72,7 @@ namespace Darts_Score_Management.Services
             var gamePlayers = createGameDto.PlayerIds.Select((playerId, index) => new GamePlayer
             {
                 PlayerId = playerId,
-                TurnOrder = index + 1
+                TurnOrder = index + 1 // Initialize TurnOrder based on the order of PlayerIds in the list
             }).ToList();
 
             var createdGame = await _gameRepository.CreateGameWithPlayersAsync(game, gamePlayers);
@@ -105,11 +125,8 @@ namespace Darts_Score_Management.Services
 
         private async Task CreateSetsAndLegsForGame(Game game, int setsToWin, int legsPerSet)
         {
-            // Calculate maximum sets needed for best-of (e.g., best of 2 sets requires 3 sets)
-            int totalSets = setsToWin * 2 - 1;
-            totalSets = Math.Max(1, totalSets); // Ensure at least 1 set
-
-            for (int setNumber = 1; setNumber <= totalSets; setNumber++)
+            
+            for (int setNumber = 1; setNumber <= setsToWin; setNumber++)
             {
                 var createSetDto = new CreateSetDTO
                 {
@@ -119,11 +136,7 @@ namespace Darts_Score_Management.Services
 
                 var setDto = await _setService.CreateSetAsync(createSetDto);
 
-                // Calculate maximum legs needed per set for best-of (e.g., best of 3 legs requires 5 legs)
-                int totalLegs = legsPerSet * 2 - 1;
-                totalLegs = Math.Max(1, totalLegs); // Ensure at least 1 leg
-
-                for (int legNumber = 1; legNumber <= totalLegs; legNumber++)
+                for (int legNumber = 1; legNumber <= legsPerSet; legNumber++)
                 {
                     var createLegDto = new CreateLegDTO
                     {
