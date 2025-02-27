@@ -2,6 +2,8 @@
 using Darts_Score_Management.CustomExceptions;
 using Darts_Score_Management.Data.Models;
 using Darts_Score_Management.DTOs.Game;
+using Darts_Score_Management.DTOs.Leg;
+using Darts_Score_Management.DTOs.Set;
 using Darts_Score_Management.DTOs.Statistic;
 using Darts_Score_Management.DTOs.Throw;
 using Darts_Score_Management.DTOs.Turn;
@@ -61,6 +63,9 @@ namespace Darts_Score_Management.Services
             if (turn.Leg == null || turn.Leg.Set == null)
                 return new ValidationResult { IsValid = false, Message = "Invalid turn relationships" };
 
+            if (!await ValidateLegIsActive(turn.LegId, turn.PlayerId))
+                return new ValidationResult { IsValid = false, Message = "Cannot make throws to this leg - you must complete active legs and sets first" };
+
 
             // Check if it's a valid dart segment and multiplier
             if (!IsValidDartSegment(throwDto.Segment, throwDto.Multiplier))
@@ -92,6 +97,9 @@ namespace Darts_Score_Management.Services
                     throw new GameRuleViolationException("A turn must contain exactly 3 throws", "ThrowCount");
 
                 var turn = await SetupNewTurn(legId);
+
+                if (!await ValidateLegIsActive(legId, turn.PlayerId))
+                    throw new GameRuleViolationException("Cannot make throws to this leg - you must complete active legs and sets first", "LegSequence");
 
                 // Validate turn
                 if (!await _validationService.ValidateTurnOrder(turn.Id, turn.PlayerId))
@@ -405,24 +413,144 @@ namespace Darts_Score_Management.Services
             var leg = await _legService.GetLegByIdAsync(turn.LegId);
             var set = await _setService.GetSetByIdAsync(leg.SetId);
             var legsWon = set.Legs.Count(l => l.WinnerPlayerId == turn.PlayerId);
+            var totalLegs = set.Legs.Count;
+            var game = await _gameService.GetGameByIdAsync(set.GameId);
+
+            // Count legs won by each player to determine if there's a tie
+            var players = set.Legs.Select(l => l.WinnerPlayerId).Distinct().Where(id => id.HasValue).Select(id => id.Value).ToList();
+            var legsPerPlayer = players.ToDictionary(p => p, p => set.Legs.Count(l => l.WinnerPlayerId == p));
+            bool isTie = players.Count > 1 && players.All(p => legsPerPlayer[p] == legsPerPlayer[players[0]]);
 
             if (legsWon >= set.Game.Settings.LegsPerSet)
             {
                 await _setService.EndSetAsync(set.Id, turn.PlayerId);
                 gameState.SetComplete = true;
             }
-         }
+            else if (isTie && totalLegs == game.Settings.LegsPerSet)
+            {
+                // If there's a tie (e.g., 1-1 for LegsPerSet = 2), create a tiebreaker leg
+                await CreateTiebreakerLeg(set.Id, game.Settings.LegsPerSet);
+            }
+        }
 
         private async Task CheckGameCompletion(Turn turn, GameStateDTO gameState)
         {
             var game = await _gameService.GetGameByIdAsync(turn.Leg.Set.GameId);
             var setsWon = game.Sets.Count(s => s.WinnerPlayerId == turn.PlayerId);
+            var totalSets = game.Sets.Count;
+
+            // Count sets won by each player to determine if there's a tie
+            var players = game.Sets.Select(s => s.WinnerPlayerId).Distinct().Where(id => id.HasValue).Select(id => id.Value).ToList();
+            var setsPerPlayer = players.ToDictionary(p => p, p => game.Sets.Count(s => s.WinnerPlayerId == p));
+            bool isTie = players.Count > 1 && players.All(p => setsPerPlayer[p] == setsPerPlayer[players[0]]);
 
             if (setsWon >= game.Settings.SetsToWin)
             {
                 await _gameService.EndGameAsync(game.Id, turn.PlayerId);
                 gameState.GameComplete = true;
             }
+            else if (isTie && totalSets == game.Settings.SetsToWin)
+            {
+                // If there's a tie (e.g., 1-1 for SetsToWin = 2), create a tiebreaker set
+                await CreateTiebreakerSet(game.Id, game.Settings.SetsToWin);
+            }   
+        }
+
+        private async Task CreateTiebreakerLeg(int setId, int legsPerSet)
+        {
+            var set = await _setService.GetSetByIdAsync(setId);
+            var totalLegs = set.Legs.Count;
+            var newLegNumber = totalLegs + 1;
+
+            var createLegDto = new CreateLegDTO
+            {
+                SetId = setId,
+                LegNumber = newLegNumber
+            };
+
+            await _legService.CreateLegAsync(createLegDto);
+        }
+
+        private async Task CreateTiebreakerSet(int gameId, int setsToWin)
+        {
+            var game = await _gameService.GetGameByIdAsync(gameId);
+            var totalSets = game.Sets.Count;
+            var newSetNumber = totalSets + 1;
+
+            var createSetDto = new CreateSetDTO
+            {
+                GameId = gameId,
+                SetNumber = newSetNumber
+            };
+
+            var setDto = await _setService.CreateSetAsync(createSetDto);
+
+            // Create initial legs for the new set based on LegsPerSet
+            int initialLegs = game.Settings.LegsPerSet;
+            for (int legNumber = 1; legNumber <= initialLegs; legNumber++)
+            {
+                var createLegDto = new CreateLegDTO
+                {
+                    SetId = setDto.Id,
+                    LegNumber = legNumber
+                };
+
+                await _legService.CreateLegAsync(createLegDto);
+            }
+        }
+
+        private async Task<bool> ValidateLegIsActive(int legId, int playerId)
+        {
+            // Get the leg
+            var leg = await _legService.GetLegByIdAsync(legId);
+            if (leg == null)
+                return false;
+
+            // Get the set
+            var set = await _setService.GetSetByIdAsync(leg.SetId);
+            if (set == null)
+                return false;
+
+            // Get the game
+            var game = await _gameService.GetGameByIdAsync(set.GameId);
+            if (game == null)
+                return false;
+
+            // Check if the game is still active
+            var winner = game.Players.FirstOrDefault(gp => gp.IsWinner);
+            if (winner != null)
+                return false;
+
+            // Check if the set is active (previous sets are all completed)
+            var sets = await _setService.GetSetsByGameIdAsync(game.Id);
+            var orderedSets = sets.OrderBy(s => s.SetNumber).ToList();
+
+            // Find the current set's position
+            int currentSetIndex = orderedSets.FindIndex(s => s.Id == set.Id);
+
+            // Check if any previous set is incomplete
+            for (int i = 0; i < currentSetIndex; i++)
+            {
+                if (orderedSets[i].WinnerPlayerId == null)
+                    return false; // A previous set is not complete
+            }
+
+            // Check if the leg is active (previous legs in this set are all completed)
+            var legs = await _legService.GetLegsBySetIdAsync(set.Id);
+            var orderedLegs = legs.OrderBy(l => l.LegNumber).ToList();
+
+            // Find the current leg's position
+            int currentLegIndex = orderedLegs.FindIndex(l => l.Id == legId);
+
+            // Check if any previous leg is incomplete
+            for (int i = 0; i < currentLegIndex; i++)
+            {
+                if (orderedLegs[i].WinnerPlayerId == null)
+                    return false; // A previous leg is not complete
+            }
+
+            // Everything is valid - this is an active leg
+            return true;
         }
 
         private async Task UpdateStatisticsSafely(int gameId, int playerId, CreateThrowDTO throwDto)
