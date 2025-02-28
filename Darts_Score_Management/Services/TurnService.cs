@@ -1,5 +1,6 @@
 ﻿
 using AutoMapper;
+using Darts_Score_Management.Data;
 using Darts_Score_Management.Data.Models;
 using Darts_Score_Management.DTOs.Throw;
 using Darts_Score_Management.DTOs.Turn;
@@ -51,7 +52,7 @@ namespace Darts_Score_Management.Services
             var turn = await _turnRepository.GetTurnWithThrowsAsync(turnId);
             if (turn == null)
                 throw new KeyNotFoundException($"Turn with id {turnId} not found");
-
+           
             var newThrow = new Throw
             {
                 TurnId = turnId,
@@ -61,40 +62,7 @@ namespace Darts_Score_Management.Services
                 IsBusted = false // Default to false, will be set to true if this throw busts
             };
 
-            //// Calculate points for this throw
-            //int points = newThrow.Points;//Why do we need to calculate again the points?
-
-            //// Check if any previous throw in this turn has already caused a bust
-            //bool previousBust = turn.Throws.Any(t => t.IsBusted);//Why do we check again for bust condition when the throws that we passed this method we chacked before and they werent busts
-
-            //if (previousBust)
-            //{
-            //    // If a previous throw already busted, don't change the score but add the throw
-            //    turn.Throws.Add(newThrow);
-            //    await _turnRepository.UpdateAsync(turn);
-            //    return _mapper.Map<TurnDTO>(turn);
-            //}
-
-            //// Calculate new score after this throw
-            //int newScore = turn.EndingScore - points;
-
-            //// Check for bust on this specific throw
-            //if (newScore < 0)//Why do we still continoue to check for bust
-            //{
-            //    // Mark only this throw as busted
-            //    newThrow.IsBusted = true;//Wasnt this set using the for loop in ProcesThrowss method and getting the index of the throw which did it
-
-            //    // Reset turn score to starting score
-            //    turn.EndingScore = turn.StartingScore;
-            //    turn.TotalPoints = 0;
-            //}
-            //else
-            //{
-            //    // Update score if no bust occurs
-            //    turn.EndingScore = newScore;
-            //    turn.TotalPoints += points;
-            //}
-
+        
             turn.Throws.Add(newThrow);
             await _turnRepository.UpdateAsync(turn);
             return _mapper.Map<TurnDTO>(turn);

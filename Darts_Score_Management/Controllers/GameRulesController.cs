@@ -38,7 +38,7 @@ namespace Darts_Score_Management.Controllers
         {
             try
             {
-                if (throws == null || throws.Count != 3)//chack for 3 excact throws is done in the service also(maybe redundant here)
+                if (throws == null || throws.Count != 3)
                 {
                     return BadRequest(new { message = "A turn must contain exactly 3 throws" });
                 }

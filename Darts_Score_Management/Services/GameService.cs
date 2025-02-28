@@ -112,11 +112,22 @@ namespace Darts_Score_Management.Services
             game.IsComplete = true;
             game.EndedAt = DateTime.UtcNow;
 
-            // Set winner
-            var winner = game.GamePlayers.FirstOrDefault(gp => gp.PlayerId == winnerId);
+            // Set winner and rankings
+            var gamePlayers = game.GamePlayers.OrderBy(gp => gp.TurnOrder).ToList();
+            int ranking = 1;
+
+            // Set winner's ranking (rank 1) and mark as winner
+            var winner = gamePlayers.FirstOrDefault(gp => gp.PlayerId == winnerId);
             if (winner != null)
             {
                 winner.IsWinner = true;
+                winner.FinalRanking = ranking++;
+            }
+
+            // Set rankings for losers (rank 2, 3, etc.) based on TurnOrder
+            foreach (var player in gamePlayers.Where(gp => gp.PlayerId != winnerId))
+            {
+                player.FinalRanking = ranking++;
             }
 
             await _gameRepository.UpdateAsync(game);
