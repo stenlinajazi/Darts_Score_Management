@@ -191,9 +191,18 @@ namespace Darts_Score_Management.Services
             for (int i = 0; i < throws.Count; i++)
             {
                 var throwDto = throws[i];
+                if (!IsValidDartSegment(throwDto.Segment, throwDto.Multiplier))
+                {
+                    return new BustAnalysisResult
+                    {
+                        HasBust = true,
+                        BustIndex = i,
+                        BustMessage = "Invalid dart segment or multiplier"
+                    };
+                }
                 int points = CalculatePoints(throwDto.Segment, throwDto.Multiplier);
-                int newScore = simulatedScore - points;
-
+                int newScore = simulatedScore - points; 
+                var game = _gameService.GetGameByIdAsync(turn.Leg.Set.GameId).Result;
                 // Check for bust conditions
                 if (newScore < 0)
                 {
@@ -205,10 +214,19 @@ namespace Darts_Score_Management.Services
                     };
                 }
 
+                if (newScore == 1 && game.Settings.MustFinishOnDouble)
+                {
+                    return new BustAnalysisResult
+                    {
+                        HasBust = true,
+                        BustIndex = i,
+                        BustMessage = "Bust - cannot finish on 1 with finish-on-double rule"
+                    };
+                }
+
                 // Check for finish-on-double rule
                 if (newScore == 0)
                 {
-                    var game = _gameService.GetGameByIdAsync(turn.Leg.Set.GameId).Result;
                     if (game.Settings.MustFinishOnDouble && throwDto.Multiplier != 2)
                     {
                         return new BustAnalysisResult
@@ -609,9 +627,10 @@ namespace Darts_Score_Management.Services
 
         private bool IsValidDartSegment(int segment, int multiplier)
         {
+           if (segment == 0 && multiplier == 1) return true;
            if (segment < 1 || (segment > 20 && segment != 25)) return false;
            if (multiplier < 1 || multiplier > 3) return false;
-           if (segment == 25 && multiplier > 2) return false; // Bullseye can only be single or double
+           if (segment == 25 && multiplier > 2) return false; 
            return true;
         }
 

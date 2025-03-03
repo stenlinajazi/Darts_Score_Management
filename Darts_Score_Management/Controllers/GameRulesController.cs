@@ -38,10 +38,12 @@ namespace Darts_Score_Management.Controllers
         {
             try
             {
-                if (throws == null || throws.Count != 3)
-                {
-                    return BadRequest(new { message = "A turn must contain exactly 3 throws" });
-                }
+                //if (throws == null || throws.Count != 3)
+                //{
+                //    return BadRequest(new { message = "A turn must contain exactly 3 throws" });
+                //}
+                if (throws == null || throws.Count > 3)
+                    throw new GameRuleViolationException("A turn must contain 0 to 3 throws", "ThrowCount");
 
 
                 var gameState = await _gameRulesEngine.ProcessTurnForLeg(legId, throws);

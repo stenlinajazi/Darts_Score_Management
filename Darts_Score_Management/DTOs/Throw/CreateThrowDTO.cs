@@ -11,7 +11,7 @@ namespace Darts_Score_Management.DTOs.Throw
 
         [Required]
         // [Range(0, 25)]
-        [ValidDartSegment]
+        //[ValidDartSegment]
         public int Segment { get; set; }
 
         [Required]
