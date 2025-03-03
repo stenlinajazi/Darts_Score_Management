@@ -15,14 +15,16 @@ namespace Darts_Score_Management.Services
         private readonly IMapper _mapper;
         private readonly ISetService _setService;
         private readonly ILegService _legService;
+        private readonly ITurnService _turnService;
 
         public GameService(IGameRepository gameRepository, IMapper mapper, ISetService setService,
-            ILegService legService)
+            ILegService legService, ITurnService turnService)
         {
             _gameRepository = gameRepository;
             _mapper = mapper;
             _setService = setService;
             _legService = legService;
+            _turnService = turnService;
         }
         public async Task<IEnumerable<GameDTO>> GetAllGamesAsync()
         {
@@ -113,19 +115,38 @@ namespace Darts_Score_Management.Services
             game.EndedAt = DateTime.UtcNow;
 
             // Set winner and rankings
-            var gamePlayers = game.GamePlayers.OrderBy(gp => gp.TurnOrder).ToList();
-            int ranking = 1;
-
-            // Set winner's ranking (rank 1) and mark as winner
+            var gamePlayers = game.GamePlayers.ToList();
             var winner = gamePlayers.FirstOrDefault(gp => gp.PlayerId == winnerId);
             if (winner != null)
             {
                 winner.IsWinner = true;
-                winner.FinalRanking = ranking++;
+                winner.FinalRanking = 1;
             }
 
-            // Set rankings for losers (rank 2, 3, etc.) based on TurnOrder
-            foreach (var player in gamePlayers.Where(gp => gp.PlayerId != winnerId))
+            // Get the latest leg in the game (last set, last leg)
+            var latestLeg = game.Sets
+                .OrderByDescending(s => s.SetNumber)
+                .SelectMany(s => s.Legs)
+                .OrderByDescending(l => l.LegNumber)
+                .FirstOrDefault();
+
+            if (latestLeg == null)
+                throw new InvalidOperationException("No legs found in the game");
+
+            // Fetch ending scores for all players from their last turn in the latest leg
+            var playerScores = new Dictionary<int, int>();
+            foreach (var player in gamePlayers)
+            {
+                var lastTurnDto = await _turnService.GetLastTurnByPlayerAndLegAsync(player.PlayerId, latestLeg.Id);
+                int endingScore = lastTurnDto?.EndingScore ?? game.StartingScore;
+                playerScores[player.PlayerId] = endingScore;
+            }
+
+            // Rank losers based on ending score (ascending: least points = higher rank)
+            int ranking = 2;
+            foreach (var player in gamePlayers
+                .Where(gp => gp.PlayerId != winnerId)
+                .OrderBy(gp => playerScores[gp.PlayerId]))
             {
                 player.FinalRanking = ranking++;
             }
