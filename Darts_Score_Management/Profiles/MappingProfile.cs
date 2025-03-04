@@ -124,6 +124,21 @@ namespace Darts_Score_Management.Profiles
             // Throw mappings
             CreateMap<Throw, ThrowDTO>().ReverseMap();
             CreateMap<CreateThrowDTO, Throw>();
+
+            // LegStats mappings
+            CreateMap<LegStats, LegStatsDTO>().ReverseMap();
+
+            // SetStats mappings
+            CreateMap<SetStats, SetStatsDTO>().ReverseMap();
+
+            // GameStats mappings
+            CreateMap<GameStats, GameStatsDTO>().ReverseMap();
+
+            // PlayerStats mappings (derived on-demand)
+            CreateMap<Player, PlayerStatsDTO>()
+                .ForMember(dest => dest.PlayerName, opt => opt.MapFrom(src => src.Name))
+                .ForMember(dest => dest.Last10LegsStats, opt => opt.Ignore())
+                .ForMember(dest => dest.AllStats, opt => opt.Ignore());
         }
     }
 }

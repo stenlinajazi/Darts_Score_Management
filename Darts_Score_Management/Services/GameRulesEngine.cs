@@ -363,44 +363,6 @@ namespace Darts_Score_Management.Services
             return gamePlayers[nextIndex].PlayerId;
         }
 
-        private async Task CheckAndUpdateGameCompletion(Turn turn, GameStateDTO gameState) 
-        {
-            if (turn.EndingScore == 0)
-            {
-                await CheckLegCompletion(turn, gameState, null);
-
-                if (gameState.LegComplete)
-                {
-                    await CheckSetCompletion(turn, gameState);
-
-                    if (gameState.SetComplete)
-                    {
-                        await CheckGameCompletion(turn, gameState);
-                    }
-                }
-            }
-        }
-
-         private async Task CheckLegCompletion(Turn turn, GameStateDTO gameState, ThrowDTO lastThrow)//Its called in line 285 and in the method above  Why?Is 1 time not enough
-         {
-            // Verify the last throw meets the double requirement if needed
-            var game = await _gameService.GetGameByIdAsync(turn.Leg.Set.GameId);
-            if (game.Settings.MustFinishOnDouble && turn.EndingScore == 0 && lastThrow.Multiplier != 2)
-            {
-                throw new GameRuleViolationException("Leg must end on a double", "FinishOnDouble");
-            }
-            // Update the leg with the winner
-            var leg = await _legService.GetLegByIdAsync(turn.LegId);
-            if (leg != null)
-            {
-                leg.WinnerPlayerId = turn.PlayerId;
-                await _legService.UpdateLegAsync(leg); // Assume UpdateLegAsync exists or update EndLegAsync
-            }
-            gameState.LegComplete = true;
-            gameState.Message = $"Leg {turn.LegId} completed by Player {turn.PlayerId} with double finish on {lastThrow?.Segment} (multiplier: {lastThrow?.Multiplier})";
-         }
-    
-
          private async Task CheckSetCompletion(Turn turn, GameStateDTO gameState)
          {
             var leg = await _legService.GetLegByIdAsync(turn.LegId);
