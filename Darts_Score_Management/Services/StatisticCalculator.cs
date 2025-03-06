@@ -93,11 +93,13 @@ namespace Darts_Score_Management.Services
             return CalculatePPDFromPointsAndThrows(totalPoints, totalDarts);
         }
 
-        public static string CalculateCheckoutPercentage(int successfulCheckouts, int totalAttempts)
+        public static int CalculateCheckoutPercentage(IEnumerable<Turn> turns)
         {
-            if (totalAttempts == 0) return "-";
-            var percentage = Math.Round((double)successfulCheckouts / totalAttempts * 100, 2);
-            return $"{percentage}% ({successfulCheckouts}/{totalAttempts})";
+            if (IsNullOrEmpty(turns)) return 0;
+            int totalAttempts = turns.Count(t => t.IsCheckoutAttempt);
+            int successfulCheckouts = turns.Count(t => t.IsCheckoutSuccessful);
+            if (totalAttempts == 0) return 0;
+            return (int)Math.Round((double)successfulCheckouts / totalAttempts * 100, 0);
         }
 
         public static int CalculateCount60Plus(IEnumerable<Turn> turns)
@@ -137,13 +139,13 @@ namespace Darts_Score_Management.Services
                  .Count(t => CalculateTurnScore(t) == 180);
         }
 
-        public static decimal CalculateAverageCheckout(IEnumerable<Turn> turns, int legsWon)
-        {
-            if (legsWon == 0) return 0;
-            var checkouts = turns.Where(t => t.TotalPoints == 0).Select(t => t.Throws.Sum(th => th.Multiplier * th.Segment));
-            var totalCheckout = checkouts.Sum();
-            return checkouts.Any() ? Math.Round(totalCheckout / (decimal)legsWon, 2) : 0;
-        }
+        //public static decimal CalculateAverageCheckout(IEnumerable<Turn> turns, int legsWon)
+        //{
+        //    if (legsWon == 0) return 0;
+        //    var checkouts = turns.Where(t => t.TotalPoints == 0).Select(t => t.Throws.Sum(th => th.Multiplier * th.Segment));
+        //    var totalCheckout = checkouts.Sum();
+        //    return checkouts.Any() ? Math.Round(totalCheckout / (decimal)legsWon, 2) : 0;
+        //}
 
         private static int CalculateTurnScore(Turn turn)
         {

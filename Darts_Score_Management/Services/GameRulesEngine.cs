@@ -282,7 +282,9 @@ namespace Darts_Score_Management.Services
             int currentScore = turn.StartingScore;
             var game = await _gameService.GetGameByIdAsync(turn.Leg.Set.GameId);
             ThrowDTO lastThrow = null;
-            
+
+            turn.IsCheckoutAttempt = IsCheckoutPossible(turn.StartingScore);
+
             foreach (var throwDto in throws)
             {
                 int points = CalculatePoints(throwDto.Segment, throwDto.Multiplier);
@@ -306,6 +308,7 @@ namespace Darts_Score_Management.Services
 
             if (currentScore == 0)
             {
+                turn.IsCheckoutSuccessful = true;
                 await CompleteLeg(turn, gameState, lastThrow);
             }
 
@@ -592,6 +595,16 @@ namespace Darts_Score_Management.Services
            if (multiplier < 1 || multiplier > 3) return false;
            if (segment == 25 && multiplier > 2) return false; 
            return true;
+        }
+
+        private static bool IsCheckoutPossible(int score)
+        {
+            if (score < 170 && score != 169 && score != 168 && score != 166 &&
+         score != 165 && score != 163 && score != 162 && score != 159)
+            {
+                return true;
+            }
+            return false;
         }
 
         private async Task<StatisticDTO> Update140PlusStatistic(IEnumerable<StatisticDTO> stats, int gamePlayerId)

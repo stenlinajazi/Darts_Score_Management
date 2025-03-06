@@ -11,7 +11,7 @@ namespace Darts_Score_Management.Data.Models
         public int LegsWin { get; set; }
         public decimal PPD { get; set; }
         public decimal First9PPD { get; set; }
-        public string CheckoutPercentage { get; set; } 
+        public int CheckoutPercentage { get; set; }
         public int Count60Plus { get; set; }
         public int Count100Plus { get; set; }
         public int Count140Plus { get; set; }

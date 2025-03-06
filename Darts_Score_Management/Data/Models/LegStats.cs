@@ -10,7 +10,7 @@ namespace Darts_Score_Management.Data.Models
         public decimal PPD { get; set; } // Points Per Dart
         public decimal First9PPD { get; set; } // First 9 Darts PPD
         public int TotalThrows { get; set; }
-        public string CheckoutPercentage { get; set; } // e.g., "100% (1/1)" or "-"
+        public int CheckoutPercentage { get; set; }
         public int Count60Plus { get; set; }
         public int Count100Plus { get; set; }
         public int Count140Plus { get; set; }

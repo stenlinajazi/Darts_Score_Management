@@ -170,15 +170,12 @@ namespace Darts_Score_Management.Services
             var ppd = StatisticCalculator.CalculatePPD(turns);
             var first9PPD = StatisticCalculator.CalculateFirst9PPD(turns);
             var totalThrows = turns.Sum(t => t.Throws.Count);
-            var checkoutPercentage = StatisticCalculator.CalculateCheckoutPercentage(
-                turns.Count(t => t.TotalPoints == 0), // Successful checkouts (e.g., leg won)
-                turns.Count(t => t.IsCheckoutAttempt)); // Total checkout attempts (simplified logic)
+            var checkoutPercentage = StatisticCalculator.CalculateCheckoutPercentage(turns);
             var count60Plus = StatisticCalculator.CalculateCount60Plus(turns);
             var count100Plus = StatisticCalculator.CalculateCount100Plus(turns);
             var count140Plus = StatisticCalculator.CalculateCount140Plus(turns);
             var count180s = StatisticCalculator.CalculateCount180s(turns);
-            var averageCheckout = StatisticCalculator.CalculateAverageCheckout(turns, 1); // Assume 1 leg win for simplicity
-
+     
             return new LegStats
             {
                 GamePlayerId = gamePlayerId,
@@ -205,16 +202,13 @@ namespace Darts_Score_Management.Services
             var gamePlayer = _context.GamePlayers.FirstOrDefault(gp => gp.Id == gamePlayerId);
             var playerId = gamePlayer?.PlayerId ?? 0;
             var legsWon = legsPerPlayer.ContainsKey(playerId) ? legsPerPlayer[playerId] : 0;
-            var checkoutPercentage = StatisticCalculator.CalculateCheckoutPercentage(
-                legsWon, // Successful checkouts (legs won)
-                legStats.Count()); // Total attempts (all legs in set)
+            var playerTurns = legStats.SelectMany(ls => _context.Turns
+            .Where(t => t.LegId == ls.LegId && t.PlayerId == playerId));
+            var checkoutPercentage = StatisticCalculator.CalculateCheckoutPercentage(playerTurns);
             var count60Plus = legStats.Sum(ls => ls.Count60Plus);
             var count100Plus = legStats.Sum(ls => ls.Count100Plus);
             var count140Plus = legStats.Sum(ls => ls.Count140Plus);
             var count180s = legStats.Sum(ls => ls.Count180s);
-            var averageCheckout = StatisticCalculator.CalculateAverageCheckout(
-                legStats.SelectMany(ls => _context.Turns.Where(t => t.LegId == ls.LegId)), 
-                legsWon);
 
             return new SetStats
             {
@@ -244,16 +238,13 @@ namespace Darts_Score_Management.Services
             var playerId = gamePlayer?.PlayerId ?? 0;
             var setsWon = setsWonPerPlayer.ContainsKey(playerId) ? setsWonPerPlayer[playerId] : 0;
             var legsWon = setStats.Sum(ss => ss.LegsWin);
-            var checkoutPercentage = StatisticCalculator.CalculateCheckoutPercentage(
-                setsWon, // Successful checkouts (sets won)
-                setStats.Count()); // Total attempts (all sets in game)
+            var playerTurns = setStats.SelectMany(ss => _context.Turns
+            .Where(t => t.Leg.SetId == ss.SetId && t.PlayerId == playerId));
+            var checkoutPercentage = StatisticCalculator.CalculateCheckoutPercentage(playerTurns);
             var count60Plus = setStats.Sum(ss => ss.Count60Plus);
             var count100Plus = setStats.Sum(ss => ss.Count100Plus);
             var count140Plus = setStats.Sum(ss => ss.Count140Plus);
             var count180s = setStats.Sum(ss => ss.Count180s);
-            var averageCheckout = StatisticCalculator.CalculateAverageCheckout(
-                setStats.SelectMany(ss => _context.Turns.Where(t => t.Leg.SetId == ss.SetId)), // Fetch turns for sets
-                legsWon);
 
             return new GameStats
             {
@@ -344,16 +335,14 @@ namespace Darts_Score_Management.Services
             var first9PPD = StatisticCalculator.CalculateFirst9PPDAggregate(sets);
             var setsWon = sets.Count(ss => ss.Set.WinnerPlayerId == gameStat.GamePlayer.PlayerId); // Simplified logic
             var legsWon = legs.Count(ls => ls.Leg.WinnerPlayerId == gameStat.GamePlayer.PlayerId);
-            var checkoutPercentage = StatisticCalculator.CalculateCheckoutPercentage(
-                setsWon, // Successful checkouts (sets won)
-                sets.Count()); // Total attempts (all sets in game)
+            var playerTurns = legs.SelectMany(ls => _context.Turns
+             .Where(t => t.LegId == ls.LegId && t.PlayerId == gameStat.GamePlayer.PlayerId));
+            var checkoutPercentage = StatisticCalculator.CalculateCheckoutPercentage(playerTurns);
             var count60Plus = sets.Sum(ss => ss.Count60Plus) + legs.Sum(ls => ls.Count60Plus);
             var count100Plus = sets.Sum(ss => ss.Count100Plus) + legs.Sum(ls => ls.Count100Plus);
             var count140Plus = sets.Sum(ss => ss.Count140Plus) + legs.Sum(ls => ls.Count140Plus);
             var count180s = sets.Sum(ss => ss.Count180s) + legs.Sum(ls => ls.Count180s);
-            var averageCheckout = StatisticCalculator.CalculateAverageCheckout(
-                legs.SelectMany(ls => _context.Turns.Where(t => t.LegId == ls.LegId)), // Fetch turns for legs
-                legsWon);
+           
 
             return new GameStats
             {
@@ -364,7 +353,7 @@ namespace Darts_Score_Management.Services
                 PPD = ppd,
                 First9PPD = first9PPD,
                 
-                CheckoutPercentage = checkoutPercentage,
+             //   CheckoutPercentage = checkoutPercentage,
                 Count60Plus = count60Plus,
                 Count100Plus = count100Plus,
                 Count140Plus = count140Plus,
