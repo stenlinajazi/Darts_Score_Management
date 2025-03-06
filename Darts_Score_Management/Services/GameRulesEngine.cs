@@ -13,6 +13,7 @@ using Darts_Score_Management.Interfaces.RepositoryInterfaces;
 using Darts_Score_Management.Interfaces.ServiceInterfaces;
 using Darts_Score_Management.Repositories;
 using Microsoft.EntityFrameworkCore;
+using System;
 using System.Text.Json;
 using System.Transactions;
 
@@ -53,6 +54,8 @@ namespace Darts_Score_Management.Services
             _turnRepository = turnRepository;
         }
 
+
+
         //Validates a single dart throw against game rules (e.g., valid segments, bust conditions, finish-on-double rule) before it’s processed
         public async Task<ValidationResult> ValidateThrow(CreateThrowDTO throwDto, int turnId)
         {
@@ -92,7 +95,7 @@ namespace Darts_Score_Management.Services
         //Processes a turn (up to 3 throws), validates it, updates the game state, and checks for completion (leg, set, game)
         public async Task<GameStateDTO> ProcessTurnForLeg(int legId, List<CreateThrowDTO> throws)
         {
-            //using var transaction = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled);
+            using var transaction = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled);
             try
             {
                 //if (throws == null || throws.Count != 3)
@@ -103,7 +106,6 @@ namespace Darts_Score_Management.Services
                 if (!await ValidateLegIsActive(legId, turn.PlayerId))
                     throw new GameRuleViolationException("Cannot make throws to this leg - you must complete active legs and sets first", "LegSequence");
 
-                // Validate turn
                 if (!await _validationService.ValidateTurnOrder(turn.Id, turn.PlayerId))
                     throw new GameRuleViolationException("Invalid turn order", "TurnOrder");
 
@@ -118,7 +120,7 @@ namespace Darts_Score_Management.Services
                     await CheckForSetAndGameCompletion(turn, gameState);
                 }
 
-                //transaction.Complete();
+                transaction.Complete();
                 return gameState;
             }
             catch (Exception ex)
@@ -128,7 +130,6 @@ namespace Darts_Score_Management.Services
                 throw;
             }
         }
-        // Creates a new turn for the given leg
         private async Task<Turn> SetupNewTurn(int legId)
         {
             var leg = await _legService.GetLegByIdAsync(legId);
@@ -150,7 +151,6 @@ namespace Darts_Score_Management.Services
             Turn lastPlayerTurn = _mapper.Map<Turn>(lastPlayerTurnDto);
             int startingScore = lastPlayerTurn?.EndingScore ?? leg.Set.Game.StartingScore;
 
-            // Create the turn
             var createTurnDto = new CreateTurnDTO
             {
                 LegId = legId,
@@ -160,7 +160,6 @@ namespace Darts_Score_Management.Services
             };
 
             var turnDto = await _turnService.CreateTurnAsync(createTurnDto);
-            // Retrieve the newly created turn with all necessary includes
             return await _turnRepository.GetTurnWithThrowsAsync(turnDto.Id);
         }
         // Process all throws in a turn
@@ -267,7 +266,7 @@ namespace Darts_Score_Management.Services
                 };
 
                 turn.Throws.Add(newThrow);
-                await UpdateStatisticsSafely(turn.Leg.Set.GameId, turn.PlayerId, throwDto);
+            //    await UpdateStatisticsSafely(turn.Leg.Set.GameId, turn.PlayerId, throwDto);
             }
 
             await _turnRepository.UpdateAsync(turn);
@@ -277,19 +276,18 @@ namespace Darts_Score_Management.Services
             gameState.Message = bustMessage;
         }
 
-        // Process a turn with no busts
+        
         private async Task ProcessSuccessfulTurn(Turn turn, List<CreateThrowDTO> throws, GameStateDTO gameState)
         {
             int currentScore = turn.StartingScore;
             var game = await _gameService.GetGameByIdAsync(turn.Leg.Set.GameId);
             ThrowDTO lastThrow = null;
-            // Process all throws
+            
             foreach (var throwDto in throws)
             {
                 int points = CalculatePoints(throwDto.Segment, throwDto.Multiplier);
                 currentScore -= points;
-
-                // Create and add the throw directly to the turn entity
+     
                 var newThrow = new Throw
                 {
                     TurnId = turn.Id,
@@ -300,24 +298,19 @@ namespace Darts_Score_Management.Services
                 };
                 turn.Throws.Add(newThrow);
 
-                await UpdateStatisticsSafely(turn.Leg.Set.GameId, turn.PlayerId, throwDto);
+              //  await UpdateStatisticsSafely(turn.Leg.Set.GameId, turn.PlayerId, throwDto);
                 turn.TotalPoints += points;
             }
 
-            // Update the ending score
             turn.EndingScore = currentScore;
 
-            // Check if the leg is completed (score = 0) and update accordingly
             if (currentScore == 0)
             {
                 await CompleteLeg(turn, gameState, lastThrow);
             }
 
-            // Save all changes at once
             await _turnRepository.UpdateAsync(turn);
         }
-
-        // Unified leg completion method
         private async Task CompleteLeg(Turn turn, GameStateDTO gameState, ThrowDTO lastThrow)
         {
             // Update leg with winner
@@ -326,6 +319,12 @@ namespace Darts_Score_Management.Services
             {
                 leg.WinnerPlayerId = turn.PlayerId;
                 await _legService.UpdateLegAsync(leg);
+
+                // Update leg-level statistics after processing the turn
+                var gamePlayers = await _legService.GetGamePlayersForLegAsync(turn.LegId);
+                if (gamePlayers == null || !gamePlayers.Any())
+                    throw new KeyNotFoundException($"No game players found for Leg with ID {turn.LegId}.");
+                await _statisticService.UpdateLegStatsAsync(turn.LegId, gamePlayers);
             }
 
             gameState.LegComplete = true;
@@ -373,11 +372,13 @@ namespace Darts_Score_Management.Services
 
             // Count legs won by each player to determine if there's a tie
             var players = set.Legs.Select(l => l.WinnerPlayerId).Distinct().Where(id => id.HasValue).Select(id => id.Value).ToList();
-            var legsPerPlayer = players.ToDictionary(p => p, p => set.Legs.Count(l => l.WinnerPlayerId == p));
-            bool isTie = players.Count > 1 && players.All(p => legsPerPlayer[p] == legsPerPlayer[players[0]]);
+            var legsWonPerPlayer = players.ToDictionary(p => p, p => set.Legs.Count(l => l.WinnerPlayerId == p));
+            bool isTie = players.Count > 1 && players.All(p => legsWonPerPlayer[p] == legsWonPerPlayer[players[0]]);
 
             if (legsWon >= set.Game.Settings.LegsPerSet)
             {
+                // Update set-level statistics before ending the set
+                await _statisticService.UpdateSetStatsAsync(set.Id, legsWonPerPlayer);
                 await _setService.EndSetAsync(set.Id, turn.PlayerId);
                 gameState.SetComplete = true;
             }
@@ -401,6 +402,8 @@ namespace Darts_Score_Management.Services
 
             if (setsWon >= game.Settings.SetsToWin)
             {
+                // Update game-level statistics before ending the game
+                await _statisticService.UpdateGameStatsAsync(game.Id);
                 await _gameService.EndGameAsync(game.Id, turn.PlayerId);
                 gameState.GameComplete = true;
             }
@@ -456,17 +459,14 @@ namespace Darts_Score_Management.Services
 
         private async Task<bool> ValidateLegIsActive(int legId, int playerId)
         {
-            // Get the leg
             var leg = await _legService.GetLegByIdAsync(legId);
             if (leg == null)
                 return false;
 
-            // Get the set
             var set = await _setService.GetSetByIdAsync(leg.SetId);
             if (set == null)
                 return false;
 
-            // Get the game
             var game = await _gameService.GetGameByIdAsync(set.GameId);
             if (game == null)
                 return false;
@@ -503,46 +503,44 @@ namespace Darts_Score_Management.Services
                 if (orderedLegs[i].WinnerPlayerId == null)
                     return false; // A previous leg is not complete
             }
-
-            // Everything is valid - this is an active leg
             return true;
         }
 
-        private async Task UpdateStatisticsSafely(int gameId, int playerId, CreateThrowDTO throwDto)
-        {
-            try
-            {
-                var game = await _gameService.GetGameByIdAsync(gameId);
-                var gamePlayer = game.Players.First(gp => gp.Player.Id == playerId);
-                var stats = await _statisticService.GetPlayerGameStatisticsAsync(gamePlayer.Id);
-                var updatedStats = new List<StatisticDTO>();
+        //private async Task UpdateStatisticsSafely(int gameId, int playerId, CreateThrowDTO throwDto)
+        //{
+        //    try
+        //    {
+        //        var game = await _gameService.GetGameByIdAsync(gameId);
+        //        var gamePlayer = game.Players.First(gp => gp.Player.Id == playerId);
+        //        var stats = await _statisticService.GetPlayerGameStatisticsAsync(gamePlayer.Id);
+        //        var updatedStats = new List<StatisticDTO>();
 
-                // Update PPD
-                try
-                {
-                    var ppdStat = await UpdatePPDStatistic(stats, gamePlayer.Id, throwDto);
-                    if (ppdStat != null) updatedStats.Add(ppdStat);
-                }
-                catch (Exception ex)
-                {
-                    throw new StatisticsUpdateException("Failed to update PPD statistic", gamePlayer.Id, StatisticType.PPD);
-                }
+        //        // Update PPD
+        //        try
+        //        {
+        //            var ppdStat = await UpdatePPDStatistic(stats, gamePlayer.Id, throwDto);
+        //            if (ppdStat != null) updatedStats.Add(ppdStat);
+        //        }
+        //        catch (Exception ex)
+        //        {
+        //            throw new StatisticsUpdateException("Failed to update PPD statistic", gamePlayer.Id, StatisticType.PPD);
+        //        }
 
-                // Update other statistics
-                await UpdateHighScoreStatistics(stats, gamePlayer.Id, throwDto, updatedStats);
+        //        // Update other statistics
+        //        await UpdateHighScoreStatistics(stats, gamePlayer.Id, throwDto, updatedStats);
 
-                if (updatedStats.Any())
-                {
-                    await _statisticService.UpdateStatisticsAsync(gamePlayer.Id, updatedStats);
-                }
-            }
-            catch (Exception ex)
-            {
-                // Log the error but don't fail the turn
-                // Consider implementing retry logic here
-                // Throw custom exception if critical
-            }
-        }
+        //        if (updatedStats.Any())
+        //        {
+        //            await _statisticService.UpdateStatisticsAsync(gamePlayer.Id, updatedStats);
+        //        }
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        // Log the error but don't fail the turn
+        //        // Consider implementing retry logic here
+        //        // Throw custom exception if critical
+        //    }
+        //}
 
         private async Task<StatisticDTO> UpdatePPDStatistic(IEnumerable<StatisticDTO> stats, int gamePlayerId, CreateThrowDTO throwDto)//Needs to be implemented
         {

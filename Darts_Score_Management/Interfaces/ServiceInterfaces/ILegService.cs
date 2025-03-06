@@ -10,5 +10,6 @@ namespace Darts_Score_Management.Interfaces.ServiceInterfaces
         Task<LegDTO> EndLegAsync(int id, int winnerId);
         Task<IEnumerable<LegDTO>> GetLegsBySetIdAsync(int setId);
         Task<LegDTO> UpdateLegAsync(Leg leg);
+        Task<List<GamePlayer>> GetGamePlayersForLegAsync(int legId);
     }
 }

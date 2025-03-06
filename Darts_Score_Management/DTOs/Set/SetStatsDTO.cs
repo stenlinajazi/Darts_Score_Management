@@ -13,6 +13,5 @@
         public int Count100Plus { get; set; }
         public int Count140Plus { get; set; }
         public int Count180s { get; set; }
-        public int HighestCheckout { get; set; }
     }
 }

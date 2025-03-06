@@ -4,6 +4,7 @@ using Darts_Score_Management.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Darts_Score_Management.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250304103301_AddTotalThrowsToSetStats")]
+    partial class AddTotalThrowsToSetStats
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -189,6 +192,9 @@ namespace Darts_Score_Management.Migrations
                         .HasColumnType("int");
 
                     b.Property<int>("GamePlayerId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("HighestCheckout")
                         .HasColumnType("int");
 
                     b.Property<bool>("IsDeleted")
@@ -457,6 +463,9 @@ namespace Darts_Score_Management.Migrations
                     b.Property<int>("GamePlayerId")
                         .HasColumnType("int");
 
+                    b.Property<int>("HighestCheckout")
+                        .HasColumnType("int");
+
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("bit");
 
@@ -583,9 +592,6 @@ namespace Darts_Score_Management.Migrations
 
                     b.Property<int>("EndingScore")
                         .HasColumnType("int");
-
-                    b.Property<bool>("IsCheckoutAttempt")
-                        .HasColumnType("bit");
 
                     b.Property<int>("LegId")
                         .HasColumnType("int");

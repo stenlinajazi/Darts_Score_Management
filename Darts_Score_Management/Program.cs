@@ -24,6 +24,9 @@ builder.Services.AddScoped<ISetRepository, SetRepository>();
 builder.Services.AddScoped<ILegRepository, LegRepository>();
 builder.Services.AddScoped<ITurnRepository, TurnRepository>();
 builder.Services.AddScoped<IThrowRepository, ThrowRepository>();
+builder.Services.AddScoped<ILegStatsRepository, LegStatsRepository>();
+builder.Services.AddScoped<ISetStatsRepository, SetStatsRepository>();
+builder.Services.AddScoped<IGameStatsRepository, GameStatsRepository>();
 
 
 // Register services
@@ -37,6 +40,8 @@ builder.Services.AddScoped<ITurnService, TurnService>();
 builder.Services.AddScoped<IGameValidationService, GameValidationService>();
 builder.Services.AddScoped<IGameRulesEngine, GameRulesEngine>();
 builder.Services.AddAutoMapper(typeof(Program).Assembly);
+builder.Services.AddScoped<IStatisticService, StatisticService>();
+
 
 // Add services to the container.
 

@@ -40,7 +40,7 @@ namespace Darts_Score_Management.Services
                 PlayerId = createTurnDto.PlayerId,
                 TurnNumber = createTurnDto.TurnNumber,
                 StartingScore = createTurnDto.StartingScore,
-                EndingScore = createTurnDto.StartingScore // Will be updated as throws are added
+                EndingScore = createTurnDto.StartingScore 
             };
 
             var createdTurn = await _turnRepository.AddAsync(turn);
@@ -90,6 +90,11 @@ namespace Darts_Score_Management.Services
         {
             var throws = await GetThrowsForTurnAsync(turnId);
             return throws?.OrderByDescending(t => t.ThrowNumber).FirstOrDefault();
+        }
+
+        public async Task<IEnumerable<Turn>> GetPlayerTurnsInLegAsync(int playerId, int legId)
+        {
+            return await _turnRepository.GetTurnsByPlayerAndLegAsync(playerId, legId);
         }
     }
 }

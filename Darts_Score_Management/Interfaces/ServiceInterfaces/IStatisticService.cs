@@ -1,11 +1,21 @@
-﻿using Darts_Score_Management.DTOs.Statistic;
+﻿using Darts_Score_Management.Data.Models;
+using Darts_Score_Management.DTOs.Game;
+using Darts_Score_Management.DTOs.Leg;
+using Darts_Score_Management.DTOs.Player;
+using Darts_Score_Management.DTOs.Set;
+using Darts_Score_Management.DTOs.Statistic;
 
 namespace Darts_Score_Management.Interfaces.ServiceInterfaces
 {
     public interface IStatisticService
     {
-        Task<StatisticDTO> GetStatisticByIdAsync(int id);
-        Task<IEnumerable<StatisticDTO>> GetPlayerGameStatisticsAsync(int gamePlayerId);
-        Task<IEnumerable<StatisticDTO>> UpdateStatisticsAsync(int gamePlayerId, List<StatisticDTO> stats);
+        Task UpdateLegStatsAsync(int legId, List<GamePlayer> gamePlayers);
+        Task UpdateSetStatsAsync(int setId, Dictionary<int, int> legsWonPerPlayer);
+        Task UpdateGameStatsAsync(int gameId);
+        Task<LegStatsDTO> GetLegStatsAsync(int legId, int gamePlayerId);
+        Task<SetStatsDTO> GetSetStatsAsync(int setId, int gamePlayerId);
+        Task<GameStatsDTO> GetGameStatsAsync(int gameId, int gamePlayerId);
+        Task<PlayerStatsDTO> GetPlayerStatsAsync(int playerId);
+        Task<List<GameStatsDTO>> GetGameHistoryAsync();
     }
 }

@@ -9,6 +9,7 @@
         public int StartingScore { get; set; }
         public int EndingScore { get; set; }
         public int TotalPoints { get; set; }
+        public bool IsCheckoutAttempt { get; set; }
 
         // Navigation properties
         public Leg Leg { get; set; }
