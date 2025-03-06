@@ -57,8 +57,19 @@ namespace Darts_Score_Management.Services
         public static decimal CalculateFirst9PPDAggregate(IEnumerable<LegStats> legStats)
         {
             if (IsNullOrEmpty(legStats)) return 0;
-            var totalPoints = legStats.Sum(ls => ls.First9PPD * 9); // Assuming 9 darts per leg for simplicity
-            var totalDarts = legStats.Count() * 9;
+            var validStats = legStats.Where(ls => ls.TotalThrows > 0 && ls.First9PPD > 0).ToList();
+            if (!validStats.Any()) return 0;
+
+            // Use TotalThrows to determine the actual darts thrown, capped at 9 per leg
+            decimal totalPoints = 0;
+            int totalDarts = 0;
+            foreach (var ls in validStats.OrderBy(ls => ls.LegId))
+            {
+                int dartsInLeg = Math.Min(ls.TotalThrows, 9 - totalDarts); // Cap at 9 total across legs
+                if (dartsInLeg <= 0) break;
+                totalPoints += ls.First9PPD * dartsInLeg; // Scale by actual throws
+                totalDarts += dartsInLeg;
+            }
             return CalculatePPDFromPointsAndThrows(totalPoints, totalDarts);
         }
         
@@ -66,8 +77,19 @@ namespace Darts_Score_Management.Services
         public static decimal CalculateFirst9PPDAggregate(IEnumerable<SetStats> setStats)
         {
             if (IsNullOrEmpty(setStats)) return 0;
-            var totalPoints = setStats.Sum(ss => ss.First9PPD * 9 * ss.LegsWin); 
-            var totalDarts = setStats.Sum(ss => 9 * ss.LegsWin);
+            var validStats = setStats.Where(ss => ss.TotalThrows > 0 && ss.First9PPD > 0).ToList();
+            if (!validStats.Any()) return 0;
+
+            // Use TotalThrows to determine the actual darts thrown, capped at 9 across sets
+            decimal totalPoints = 0;
+            int totalDarts = 0;
+            foreach (var ss in validStats.OrderBy(ss => ss.SetId))
+            {
+                int dartsInSet = Math.Min(ss.TotalThrows, 9 - totalDarts); // Cap at 9 total across sets
+                if (dartsInSet <= 0) break;
+                totalPoints += ss.First9PPD * dartsInSet; // Scale by actual throws
+                totalDarts += dartsInSet;
+            }
             return CalculatePPDFromPointsAndThrows(totalPoints, totalDarts);
         }
 
@@ -84,7 +106,7 @@ namespace Darts_Score_Management.Services
             return turns
                 .Count(t => {
                     var turnScore = CalculateTurnScore(t);
-                    return turnScore > 60 && turnScore < 100;
+                    return turnScore >= 60 && turnScore < 100;
                 });
         }
 

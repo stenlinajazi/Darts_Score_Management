@@ -79,14 +79,14 @@ namespace Darts_Score_Management.Services
             }
         }
 
-        public async Task UpdateGameStatsAsync(int gameId)
+        public async Task UpdateGameStatsAsync(int gameId, Dictionary<int, int> setsWonPerPlayer)
         {
             var gamePlayers = await GetGamePlayersForGameAsync(gameId);
-            var setStats = await _setStatsRepository.GetSetsForGameAsync(gameId);
-
+           
             foreach (var gp in gamePlayers)
             {
-                var gameStats = AggregateGameStats(setStats.Where(ss => ss.GamePlayerId == gp.Id || ss.Set.WinnerPlayerId == gp.PlayerId), gp.Id, gameId);
+                var playerSetStats = await _setStatsRepository.GetSetStatsForPlayerInGameAsync(gameId, gp.Id, gp.PlayerId);
+                var gameStats = AggregateGameStats(playerSetStats, gp.Id, gameId, setsWonPerPlayer);
                 await _gameStatsRepository.AddAsync(gameStats);
             }
         }
@@ -235,12 +235,14 @@ namespace Darts_Score_Management.Services
             };
         }
 
-        private GameStats AggregateGameStats(IEnumerable<SetStats> setStats, int gamePlayerId, int gameId)
+        private GameStats AggregateGameStats(IEnumerable<SetStats> setStats, int gamePlayerId, int gameId, Dictionary<int, int> setsWonPerPlayer)
         {
             var totalThrows = setStats.Sum(ss => ss.TotalThrows);
             var ppd = StatisticCalculator.CalculatePPDAggregate(setStats);
             var first9PPD = StatisticCalculator.CalculateFirst9PPDAggregate(setStats);
-            var setsWon = setStats.Count(ss => ss.Set.WinnerPlayerId == gamePlayerId);
+            var gamePlayer = _context.GamePlayers.FirstOrDefault(gp => gp.Id == gamePlayerId);
+            var playerId = gamePlayer?.PlayerId ?? 0;
+            var setsWon = setsWonPerPlayer.ContainsKey(playerId) ? setsWonPerPlayer[playerId] : 0;
             var legsWon = setStats.Sum(ss => ss.LegsWin);
             var checkoutPercentage = StatisticCalculator.CalculateCheckoutPercentage(
                 setsWon, // Successful checkouts (sets won)

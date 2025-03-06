@@ -403,7 +403,7 @@ namespace Darts_Score_Management.Services
             if (setsWon >= game.Settings.SetsToWin)
             {
                 // Update game-level statistics before ending the game
-                await _statisticService.UpdateGameStatsAsync(game.Id);
+                await _statisticService.UpdateGameStatsAsync(game.Id, setsPerPlayer);
                 await _gameService.EndGameAsync(game.Id, turn.PlayerId);
                 gameState.GameComplete = true;
             }

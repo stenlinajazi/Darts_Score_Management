@@ -15,10 +15,11 @@ namespace Darts_Score_Management.Repositories
                 .FirstOrDefaultAsync(ss => ss.SetId == setId && ss.GamePlayerId == gamePlayerId);
         }
 
-        public async Task<IEnumerable<SetStats>> GetPlayerSetStatsAsync(int gamePlayerId)
+        public async Task<IEnumerable<SetStats>> GetSetStatsForPlayerInGameAsync(int gameId, int gamePlayerId, int playerId)
         {
             return await _context.SetStats
-                .Where(ss => ss.GamePlayerId == gamePlayerId)
+                .Include(ss => ss.Set)
+                .Where(ss => ss.Set.GameId == gameId && ss.GamePlayerId == gamePlayerId)
                 .ToListAsync();
         }
 
