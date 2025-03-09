@@ -19,19 +19,19 @@ namespace Darts_Score_Management.Controllers
             _gameRulesEngine = gameRulesEngine;
         }
 
-        [HttpPost("{turnId}/validate")]
-        public async Task<IActionResult> ValidateThrow(int turnId, [FromBody] CreateThrowDTO throwDto)
-        {
-            try
-            {
-                var result = await _gameRulesEngine.ValidateThrow(throwDto, turnId);
-                return Ok(result);
-            }
-            catch (Exception ex)
-            {
-                return BadRequest(new { message = ex.Message });
-            }
-        }
+        //[HttpPost("{turnId}/validate")]
+        //public async Task<IActionResult> ValidateThrow(int turnId, [FromBody] CreateThrowDTO throwDto)
+        //{
+        //    try
+        //    {
+        //        var result = await _gameRulesEngine.ValidateThrow(throwDto, turnId);
+        //        return Ok(result);
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        return BadRequest(new { message = ex.Message });
+        //    }
+        //}
 
         [HttpPost("{legId}/throws")]
         public async Task<ActionResult<GameStateDTO>> ProcessTurn(int legId, [FromBody] List<CreateThrowDTO> throws)

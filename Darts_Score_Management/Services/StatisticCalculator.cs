@@ -33,65 +33,106 @@ namespace Darts_Score_Management.Services
             return CalculatePPDFromPointsAndThrows(totalPoints, totalThrows);
         }
 
-        // Calculates First 9 Darts  (PPD) for Turns
-        //Extracts the first 9 throws from all turns
+        // Calculates First 9 Darts PPD for Turns
+        // Important: When a turn is busted, we still count the darts in the denominator,
+        // but we don't add the points to the numerator
         public static decimal CalculateFirst9PPD(IEnumerable<Turn> turns)
         {
             if (IsNullOrEmpty(turns)) return 0;
             var orderedTurns = turns.OrderBy(t => t.TurnNumber).ToList();
-            var first9Throws = orderedTurns.SelectMany(t => t.Throws).Take(9).ToList();
-            var totalPoints = first9Throws.Sum(t => t.Multiplier * t.Segment);
-            var totalDarts = Math.Min(9, first9Throws.Count);
-            return CalculatePPDFromPointsAndThrows(totalPoints, totalDarts);
+
+            decimal totalPoints = 0;
+            int dartCount = 0;
+
+            foreach (var turn in orderedTurns)
+            {
+                bool turnIsBusted = turn.Throws.Any(th => th.IsBusted);
+
+                // For each turn, count all darts toward the 9 total
+                // but only add points if the turn isn't busted
+                int turnsThrowCount = turn.Throws.Count;
+
+                // If adding all darts from this turn would exceed 9, limit it
+                int dartsToCount = Math.Min(turnsThrowCount, 9 - dartCount);
+
+                if (dartsToCount <= 0) break;
+
+                // Only add points if the turn isn't busted
+                if (!turnIsBusted)
+                {
+                    // Sum the points from this turn's throws (up to our limit)
+                    var throwPoints = turn.Throws
+                        .Take(dartsToCount)
+                        .Sum(th => th.Multiplier * th.Segment);
+
+                    totalPoints += throwPoints;
+                }
+
+                // Always increment the dart count
+                dartCount += dartsToCount;
+
+                if (dartCount >= 9) break;
+            }
+
+            // Always divide by the actual number of darts counted, up to 9
+            return CalculatePPDFromPointsAndThrows(totalPoints, dartCount);
         }
 
-        // Calculates First 9 Darts PPD for Leg Statistics
-        //Used to calculate the aggregate PPD for the first 9 darts across multiple legs
-        /*
-        Assumes that each LegStats object already has a precomputed First9PPD value.
-
-        Multiplies each First9PPD by 9 (assuming 9 darts per leg) to get the total points for the first 9 darts in each leg.
-
-        Sums up the total points across all legs and divides by the total number of darts (number of legs × 9) to get the aggregated PPD
-        */
         public static decimal CalculateFirst9PPDAggregate(IEnumerable<LegStats> legStats)
         {
             if (IsNullOrEmpty(legStats)) return 0;
-            var validStats = legStats.Where(ls => ls.TotalThrows > 0 && ls.First9PPD > 0).ToList();
-            if (!validStats.Any()) return 0;
 
-            // Use TotalThrows to determine the actual darts thrown, capped at 9 per leg
+            // We need to calculate the weighted average based on how many darts from each leg 
+            // contribute to the first 9
             decimal totalPoints = 0;
             int totalDarts = 0;
-            foreach (var ls in validStats.OrderBy(ls => ls.LegId))
+
+            // Get the legs ordered by their ID (assumes leg ID corresponds to play order)
+            var orderedLegStats = legStats.OrderBy(ls => ls.LegId).ToList();
+
+            // For each leg
+            foreach (var legStat in orderedLegStats)
             {
-                int dartsInLeg = Math.Min(ls.TotalThrows, 9 - totalDarts); // Cap at 9 total across legs
-                if (dartsInLeg <= 0) break;
-                totalPoints += ls.First9PPD * dartsInLeg; // Scale by actual throws
-                totalDarts += dartsInLeg;
+                // Calculate how many darts from this leg to include (up to 9 total)
+                int dartsToInclude = Math.Min(9 - totalDarts, 9);
+                if (dartsToInclude <= 0) break;
+
+                // Add weighted points from this leg
+                totalPoints += legStat.First9PPD * dartsToInclude;
+                totalDarts += dartsToInclude;
+
+                if (totalDarts >= 9) break;
             }
-            return CalculatePPDFromPointsAndThrows(totalPoints, totalDarts);
+
+            // Calculate the weighted average
+            return totalDarts > 0 ? Math.Round(totalPoints / totalDarts, 2) : 0;
         }
-        
         // Calculates First 9 Darts PPD for Set Statistics
+        // Follows the same logic as for leg statistics
         public static decimal CalculateFirst9PPDAggregate(IEnumerable<SetStats> setStats)
         {
             if (IsNullOrEmpty(setStats)) return 0;
-            var validStats = setStats.Where(ss => ss.TotalThrows > 0 && ss.First9PPD > 0).ToList();
-            if (!validStats.Any()) return 0;
 
-            // Use TotalThrows to determine the actual darts thrown, capped at 9 across sets
+            // Same weighting approach - calculate properly based on the first 9 darts
             decimal totalPoints = 0;
-            int totalDarts = 0;
-            foreach (var ss in validStats.OrderBy(ss => ss.SetId))
+            int dartCount = 0;
+
+            foreach (var setStat in setStats.OrderBy(ss => ss.SetId))
             {
-                int dartsInSet = Math.Min(ss.TotalThrows, 9 - totalDarts); // Cap at 9 total across sets
-                if (dartsInSet <= 0) break;
-                totalPoints += ss.First9PPD * dartsInSet; // Scale by actual throws
-                totalDarts += dartsInSet;
+                // How many darts from this set contribute to the first 9
+                int dartsFromSet = Math.Min(9 - dartCount, 9);
+                if (dartsFromSet <= 0) break;
+
+                totalPoints += setStat.First9PPD * dartsFromSet;
+                dartCount += dartsFromSet;
+
+                if (dartCount >= 9) break;
             }
-            return CalculatePPDFromPointsAndThrows(totalPoints, totalDarts);
+
+            return dartCount > 0 ? Math.Round(totalPoints / dartCount, 2) : 0;
         }
+
+
 
         public static int CalculateCheckoutPercentage(IEnumerable<Turn> turns)
         {

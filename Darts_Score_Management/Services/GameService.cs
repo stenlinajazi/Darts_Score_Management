@@ -53,6 +53,8 @@ namespace Darts_Score_Management.Services
                 throw new ValidationException("SetsToWin cannot exceed 3");
             if (createGameDto.Settings.LegsPerSet > 3)
                 throw new ValidationException("LegsPerSet cannot exceed 3");
+            if (createGameDto.StartingScore != 301 && createGameDto.StartingScore != 501 && createGameDto.StartingScore != 701)
+                throw new ValidationException("Starting score must be 301, 501, or 701");
 
             var game = _mapper.Map<Game>(createGameDto);
             game.StartedAt = DateTime.UtcNow;

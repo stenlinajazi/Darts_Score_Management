@@ -7,6 +7,7 @@
         public bool SetComplete { get; set; }
         public bool GameComplete { get; set; }
         public string Message { get; set; }
+        public int RemainingScore { get; set; }
 
     }
 }

@@ -36,35 +36,5 @@ namespace Darts_Score_Management.Controllers
             }
             return Ok(gamePlayer);
         }
-
-        // PUT: api/gameplayers/5/statistics
-        //[HttpPut("{id}/statistics")]
-        //public async Task<ActionResult<GamePlayerDTO>> UpdateGamePlayerStats(int id, List<StatisticDTO> stats)
-        //{
-        //    try
-        //    {
-        //        var gamePlayer = await _gamePlayerService.UpdateGamePlayerStatsAsync(id, stats);
-        //        return Ok(gamePlayer);
-        //    }
-        //    catch (KeyNotFoundException)
-        //    {
-        //        return NotFound();
-        //    }
-        //}
-
-        // POST: api/gameplayers/game/5/winner/3
-        //[HttpPost("game/{gameId}/winner/{playerId}")]
-        //public async Task<ActionResult<GamePlayerDTO>> SetGameWinner(int gameId, int playerId)
-        //{
-        //    try
-        //    {
-        //        var gamePlayer = await _gamePlayerService.SetGamePlayerWinnerAsync(gameId, playerId);
-        //        return Ok(gamePlayer);
-        //    }
-        //    catch (KeyNotFoundException)
-        //    {
-        //        return NotFound();
-        //    }
-        //}
     }
 }

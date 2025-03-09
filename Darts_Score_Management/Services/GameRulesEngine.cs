@@ -274,6 +274,7 @@ namespace Darts_Score_Management.Services
             // Set game state for bust
             gameState.IsBusted = true;
             gameState.Message = bustMessage;
+            gameState.RemainingScore = turn.EndingScore;
         }
 
         
@@ -313,6 +314,7 @@ namespace Darts_Score_Management.Services
             }
 
             await _turnRepository.UpdateAsync(turn);
+            gameState.RemainingScore = turn.EndingScore;
         }
         private async Task CompleteLeg(Turn turn, GameStateDTO gameState, ThrowDTO lastThrow)
         {
