@@ -17,7 +17,7 @@ namespace Darts_Score_Management.Profiles
         {
             // Player mappings
             CreateMap<Player, PlayerDTO>().ReverseMap();
-            CreateMap<UpsertPlayerDTO, Player>();
+            CreateMap<UpsertPlayerDTO, Player>().ReverseMap();
             CreateMap<Player, PlayerStatsDTO>();
 
             // Game mappings
@@ -25,6 +25,13 @@ namespace Darts_Score_Management.Profiles
                 .ForMember(dest => dest.Players, opt => opt.MapFrom(src => src.GamePlayers));
             CreateMap<GameDTO, Game>();
             CreateMap<CreateGameDTO, Game>();
+            CreateMap<Game, GameSummaryDTO>()
+                .ForMember(dest => dest.PlayerCount, opt => opt.MapFrom(src => src.GamePlayers.Count))
+                .ForMember(dest => dest.SetsCount, opt => opt.MapFrom(src => src.Sets.Count))
+                .ForMember(dest => dest.WinnerId, opt => opt.MapFrom(src =>
+                    src.GamePlayers.FirstOrDefault(gp => gp.IsWinner) != null
+                        ? src.GamePlayers.FirstOrDefault(gp => gp.IsWinner).PlayerId
+                        : (int?)null));
 
             // GameSettings mappings
             CreateMap<GameSettings, GameSettingsDTO>().ReverseMap();

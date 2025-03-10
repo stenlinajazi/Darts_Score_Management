@@ -15,8 +15,8 @@ namespace Darts_Score_Management.Controllers
             _statisticService = statisticService ?? throw new ArgumentNullException(nameof(statisticService));
         }
 
-        [HttpGet("{gameId}/stats/leg/{legId}")]
-        public async Task<IActionResult> GetLegStats(int gameId, int legId, [FromQuery] int gamePlayerId)
+        [HttpGet("{gameId}/stats/leg/{legId}/{gamePlayerId}")]
+        public async Task<IActionResult> GetLegStats(int gameId, int legId, int gamePlayerId)
         {
             try
             {
@@ -33,9 +33,9 @@ namespace Darts_Score_Management.Controllers
             }
         }
 
-        
-        [HttpGet("{gameId}/stats/set/{setId}")]
-        public async Task<IActionResult> GetSetStats(int gameId, int setId, [FromQuery] int gamePlayerId)
+
+        [HttpGet("{gameId}/stats/set/{setId}/{gamePlayerId}")]
+        public async Task<IActionResult> GetSetStats(int gameId, int setId, int gamePlayerId)
         {
             try
             {
@@ -52,9 +52,9 @@ namespace Darts_Score_Management.Controllers
             }
         }
 
-       
-        [HttpGet("{gameId}/stats")]
-        public async Task<IActionResult> GetGameStats(int gameId, [FromQuery] int gamePlayerId)
+
+        [HttpGet("{gameId}/stats/{gamePlayerId}")]
+        public async Task<IActionResult> GetGameStats(int gameId, int gamePlayerId)
         {
             try
             {

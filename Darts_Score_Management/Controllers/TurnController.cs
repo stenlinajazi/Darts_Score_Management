@@ -38,6 +38,7 @@ namespace Darts_Score_Management.Controllers
 
       
         [HttpPost]
+        [ApiExplorerSettings(IgnoreApi = true)]
         public async Task<ActionResult<TurnDTO>> CreateTurn(CreateTurnDTO createTurnDto)
         {
             try
@@ -53,6 +54,7 @@ namespace Darts_Score_Management.Controllers
 
        
         [HttpPost("{turnId}/throws")]
+        [ApiExplorerSettings(IgnoreApi = true)]
         public async Task<ActionResult<TurnDTO>> AddThrowToTurn(int turnId, CreateThrowDTO throwDto)
         {
             try
@@ -72,6 +74,7 @@ namespace Darts_Score_Management.Controllers
 
         
         [HttpPost("{turnId}/throws/batch")]
+        [ApiExplorerSettings(IgnoreApi = true)]
         public async Task<ActionResult<TurnDTO>> AddMultipleThrowsToTurn(int turnId, List<CreateThrowDTO> throws)
         {
             try

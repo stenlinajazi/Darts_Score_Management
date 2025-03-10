@@ -15,16 +15,14 @@ namespace Darts_Score_Management.Controllers
         {
             _gameService = gameService;
         }
-
-        // GET: api/games
+        
         [HttpGet]
         public async Task<ActionResult<IEnumerable<GameDTO>>> GetGames()
         {
-            var games = await _gameService.GetAllGamesAsync();
+            var games = await _gameService.GetAllGameSummariesAsync();
             return Ok(games);
         }
 
-        // GET: api/games/5
         [HttpGet("{id}")]
         public async Task<ActionResult<GameDTO>> GetGame(int id)
         {
@@ -36,24 +34,22 @@ namespace Darts_Score_Management.Controllers
             return Ok(game);
         }
 
-        // GET: api/games/player/5
         [HttpGet("player/{playerId}")]
-        public async Task<ActionResult<IEnumerable<GameDTO>>> GetPlayerGames(int playerId)
+        public async Task<ActionResult<IEnumerable<PlayerGameSummaryDTO>>> GetPlayerGames(int playerId)
         {
             var games = await _gameService.GetPlayerGamesAsync(playerId);
             return Ok(games);
         }
 
-        // POST: api/games
         [HttpPost]
         public async Task<ActionResult<GameDTO>> CreateGame(CreateGameDTO createGameDto)
         {
             var game = await _gameService.CreateGameAsync(createGameDto);
             return CreatedAtAction(nameof(GetGame), new { id = game.Id }, game);
         }
-
-        // PUT: api/games/5
+     
         [HttpPut("{id}")]
+        [ApiExplorerSettings(IgnoreApi = true)]
         public async Task<ActionResult<GameDTO>> UpdateGame(int id, GameDTO gameDto)
         {
             try
@@ -67,8 +63,8 @@ namespace Darts_Score_Management.Controllers
             }
         }
 
-        // POST: api/games/5/end
         [HttpPost("{id}/end")]
+        [ApiExplorerSettings(IgnoreApi = true)]
         public async Task<ActionResult<GameDTO>> EndGame(int id, [FromBody] int winnerId)
         {
             try
@@ -82,7 +78,6 @@ namespace Darts_Score_Management.Controllers
             }
         }
 
-        // DELETE: api/games/5
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteGame(int id)
         {

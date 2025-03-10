@@ -101,11 +101,11 @@ namespace Darts_Score_Management.Services
             await _gameRepository.DeleteAsync(id);
         }
 
-        public async Task<IEnumerable<GameDTO>> GetPlayerGamesAsync(int playerId)
+        public async Task<IEnumerable<PlayerGameSummaryDTO>> GetPlayerGamesAsync(int playerId)
         {
-            var games = await _gameRepository.GetPlayerGamesAsync(playerId);
-            return _mapper.Map<IEnumerable<GameDTO>>(games);
+            return await _gameRepository.GetPlayerGamesAsync(playerId);
         }
+        
 
         public async Task<GameDTO> EndGameAsync(int id, int winnerId)
         {
@@ -181,6 +181,12 @@ namespace Darts_Score_Management.Services
                     await _legService.CreateLegAsync(createLegDto);
                 }
             }
+        }
+
+        public async Task<IEnumerable<GameSummaryDTO>> GetAllGameSummariesAsync()
+        {
+            var games = await _gameRepository.GetAllSummariesAsync();
+            return _mapper.Map<IEnumerable<GameSummaryDTO>>(games);
         }
 
     }

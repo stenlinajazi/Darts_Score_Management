@@ -17,7 +17,6 @@ namespace Darts_Score_Management.Controllers
             _gamePlayerService = gamePlayerService;
         }
 
-        // GET: api/gameplayers/game/5
         [HttpGet("game/{gameId}")]
         public async Task<ActionResult<IEnumerable<GamePlayerDTO>>> GetGamePlayers(int gameId)
         {
@@ -25,7 +24,6 @@ namespace Darts_Score_Management.Controllers
             return Ok(gamePlayers);
         }
 
-        // GET: api/gameplayers/5
         [HttpGet("{id}")]
         public async Task<ActionResult<GamePlayerDTO>> GetGamePlayer(int id)
         {

@@ -37,6 +37,7 @@ namespace Darts_Score_Management.Controllers
 
        
         [HttpPost]
+        [ApiExplorerSettings(IgnoreApi = true)]
         public async Task<ActionResult<SetDTO>> CreateSet(CreateSetDTO createSetDto)
         {
             try
@@ -52,6 +53,7 @@ namespace Darts_Score_Management.Controllers
 
         
         [HttpPatch("{id}/end")]
+        [ApiExplorerSettings(IgnoreApi = true)]
         public async Task<ActionResult<SetDTO>> EndSet(int id, [FromBody] int winnerId)
         {
             try

@@ -1,4 +1,5 @@
-﻿using Darts_Score_Management.DTOs.Leg;
+﻿using Darts_Score_Management.Data.Models;
+using Darts_Score_Management.DTOs.Leg;
 using Darts_Score_Management.Interfaces.ServiceInterfaces;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -16,18 +17,6 @@ namespace Darts_Score_Management.Controllers
             _legService = legService;
         }
 
-       
-        [HttpGet("{id}")]
-        public async Task<ActionResult<LegDTO>> GetLeg(int id)
-        {
-            var leg = await _legService.GetLegByIdAsync(id);
-            if (leg == null)
-                return NotFound();
-
-            return Ok(leg);
-        }
-
-        
         [HttpGet("set/{setId}")]  
         public async Task<ActionResult<IEnumerable<LegDTO>>> GetLegsBySet(int setId)
         {
@@ -35,8 +24,20 @@ namespace Darts_Score_Management.Controllers
             return Ok(legs);
         }
 
-      
-        [HttpPost]   
+
+        [HttpGet("{id}")]
+        [ApiExplorerSettings(IgnoreApi = true)]
+        public async Task<ActionResult<Leg>> GetLeg(int id)
+        {
+            var leg = await _legService.GetLegByIdAsync(id);
+            if (leg == null)
+              return NotFound();
+                    
+            return Ok(leg);
+        }
+
+        [HttpPost]
+        [ApiExplorerSettings(IgnoreApi = true)]
         public async Task<ActionResult<LegDTO>> CreateLeg(CreateLegDTO createLegDto)
         {
             try
@@ -50,8 +51,9 @@ namespace Darts_Score_Management.Controllers
             }
         }
 
-        
-        [HttpPatch("{id}/end")]    
+
+        [HttpPatch("{id}/end")]
+        [ApiExplorerSettings(IgnoreApi = true)]
         public async Task<ActionResult<LegDTO>> EndLeg(int id, [FromBody] int winnerId)
         {
             try
