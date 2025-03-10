@@ -60,7 +60,7 @@ namespace Darts_Score_Management.Services
                 // Only add points if the turn isn't busted
                 if (!turnIsBusted)
                 {
-                    // Sum the points from this turn's throws (up to our limit)
+                    // Sum the points from this turn's throws (up to our limit) 
                     var throwPoints = turn.Throws
                         .Take(dartsToCount)
                         .Sum(th => th.Multiplier * th.Segment);
@@ -82,57 +82,51 @@ namespace Darts_Score_Management.Services
         {
             if (IsNullOrEmpty(legStats)) return 0;
 
-            // We need to calculate the weighted average based on how many darts from each leg 
-            // contribute to the first 9
-            decimal totalPoints = 0;
+            decimal totalWeightedPoints = 0;
             int totalDarts = 0;
 
-            // Get the legs ordered by their ID (assumes leg ID corresponds to play order)
-            var orderedLegStats = legStats.OrderBy(ls => ls.LegId).ToList();
-
-            // For each leg
-            foreach (var legStat in orderedLegStats)
+            // For each leg, consider its first 9 darts
+            foreach (var legStat in legStats)
             {
-                // Calculate how many darts from this leg to include (up to 9 total)
-                int dartsToInclude = Math.Min(9 - totalDarts, 9);
-                if (dartsToInclude <= 0) break;
+                // Each leg contributes its First9PPD * the number of darts used (up to 9)
+                // For First9PPD, we assume this is always calculated based on at most 9 darts
+                int dartsInThisLeg = legStat.TotalThrows >= 9 ? 9 : legStat.TotalThrows;
 
-                // Add weighted points from this leg
-                totalPoints += legStat.First9PPD * dartsToInclude;
-                totalDarts += dartsToInclude;
+                // Calculate weighted points contribution
+                decimal pointsFromThisLeg = legStat.First9PPD * dartsInThisLeg;
 
-                if (totalDarts >= 9) break;
+                totalWeightedPoints += pointsFromThisLeg;
+                totalDarts += dartsInThisLeg;
             }
 
-            // Calculate the weighted average
-            return totalDarts > 0 ? Math.Round(totalPoints / totalDarts, 2) : 0;
+            return totalDarts > 0 ? Math.Round(totalWeightedPoints / totalDarts, 2) : 0;
         }
+
         // Calculates First 9 Darts PPD for Set Statistics
         // Follows the same logic as for leg statistics
         public static decimal CalculateFirst9PPDAggregate(IEnumerable<SetStats> setStats)
         {
             if (IsNullOrEmpty(setStats)) return 0;
 
-            // Same weighting approach - calculate properly based on the first 9 darts
-            decimal totalPoints = 0;
-            int dartCount = 0;
+            decimal totalWeightedPoints = 0;
+            int totalDarts = 0;
 
-            foreach (var setStat in setStats.OrderBy(ss => ss.SetId))
+            // For each set, consider its First9PPD contribution
+            foreach (var setStat in setStats)
             {
-                // How many darts from this set contribute to the first 9
-                int dartsFromSet = Math.Min(9 - dartCount, 9);
-                if (dartsFromSet <= 0) break;
+                // Each set contributes its First9PPD * the number of darts used (up to 9)
+                // Assuming each set has a proper First9PPD calculated from up to 9 darts
+                int dartsInThisSet = 9; // We should always use 9 darts per set for First9PPD
 
-                totalPoints += setStat.First9PPD * dartsFromSet;
-                dartCount += dartsFromSet;
+                // Calculate weighted points contribution
+                decimal pointsFromThisSet = setStat.First9PPD * dartsInThisSet;
 
-                if (dartCount >= 9) break;
+                totalWeightedPoints += pointsFromThisSet;
+                totalDarts += dartsInThisSet;
             }
 
-            return dartCount > 0 ? Math.Round(totalPoints / dartCount, 2) : 0;
+            return totalDarts > 0 ? Math.Round(totalWeightedPoints / totalDarts, 2) : 0;
         }
-
-
 
         public static int CalculateCheckoutPercentage(IEnumerable<Turn> turns)
         {
@@ -180,14 +174,6 @@ namespace Darts_Score_Management.Services
                  .Count(t => CalculateTurnScore(t) == 180);
         }
 
-        //public static decimal CalculateAverageCheckout(IEnumerable<Turn> turns, int legsWon)
-        //{
-        //    if (legsWon == 0) return 0;
-        //    var checkouts = turns.Where(t => t.TotalPoints == 0).Select(t => t.Throws.Sum(th => th.Multiplier * th.Segment));
-        //    var totalCheckout = checkouts.Sum();
-        //    return checkouts.Any() ? Math.Round(totalCheckout / (decimal)legsWon, 2) : 0;
-        //}
-
         private static int CalculateTurnScore(Turn turn)
         {
             if (turn == null || IsNullOrEmpty(turn.Throws)) return 0;
@@ -209,6 +195,5 @@ namespace Darts_Score_Management.Services
                 ? Math.Round(totalPoints / totalThrows, 2)
                 : 0;
         }
-
     }
 }

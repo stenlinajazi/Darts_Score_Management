@@ -53,17 +53,6 @@ namespace Darts_Score_Management.Services
                 var turns = await _turnService.GetPlayerTurnsInLegAsync(currentPlayerId, legId);
                 var legStats = CalculateLegStats(turns, gamePlayer.Id, legId);
                 await _legStatsRepository.AddAsync(legStats);
-
-               // var existingStats = await _legStatsRepository.GetByLegAndPlayerAsync(legId, gamePlayer.Id);
-                //if (existingStats != null)
-                //{
-                //    _context.Entry(existingStats).CurrentValues.SetValues(legStats);
-                //    await _legStatsRepository.UpdateAsync(existingStats);
-                //}
-                //else
-                //{
-                //    await _legStatsRepository.AddAsync(legStats);
-                //}
             }
         }
 

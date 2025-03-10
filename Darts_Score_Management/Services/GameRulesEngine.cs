@@ -200,6 +200,7 @@ namespace Darts_Score_Management.Services
             // Reset turn score
             turn.EndingScore = turn.StartingScore;
             turn.TotalPoints = 0;
+            turn.IsCheckoutAttempt = IsCheckoutPossible(turn.StartingScore);
 
             // Process throws up to and including the bust
             for (int i = 0; i < throws.Count; i++)
@@ -466,7 +467,7 @@ namespace Darts_Score_Management.Services
 
         private static bool IsCheckoutPossible(int score)
         {
-            if (score < 170 && score != 169 && score != 168 && score != 166 &&
+            if (score <= 170 && score != 169 && score != 168 && score != 166 &&
          score != 165 && score != 163 && score != 162 && score != 159)
             {
                 return true;
