@@ -6,5 +6,6 @@ namespace Darts_Score_Management.Interfaces.RepositoryInterfaces
     {
         Task<Leg> GetLegWithDetailsAsync(int id);
         Task<List<Turn>> GetLegTurnsAsync(int legId);
+        Task<List<GamePlayer>> GetGamePlayersForLegAsync(int legId);
     }
 }

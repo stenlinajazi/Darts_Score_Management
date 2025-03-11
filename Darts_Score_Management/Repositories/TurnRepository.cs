@@ -74,5 +74,14 @@ namespace Darts_Score_Management.Repositories
                 .OrderByDescending(t => t.TurnNumber)
                 .FirstOrDefaultAsync();
         }
+
+        public async Task<IEnumerable<Turn>> GetTurnsByPlayerAndLegAsync(int playerId, int legId)
+        {
+            return await _context.Turns
+                .Include(t => t.Throws) 
+                .Where(t => t.PlayerId == playerId && t.LegId == legId)
+                .OrderBy(t => t.TurnNumber)
+                .ToListAsync();
+        }
     }
 }

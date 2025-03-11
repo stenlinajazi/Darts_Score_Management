@@ -9,8 +9,8 @@ namespace Darts_Score_Management.DTOs.Set
     {
         public int Id { get; set; }
         public int GameId { get; set; }
-        [JsonIgnore]
-        public GameDTO Game { get; set; }
+        //[JsonIgnore]
+        //public GameDTO Game { get; set; }
         public int SetNumber { get; set; }
         public int? WinnerPlayerId { get; set; }
         public PlayerDTO Winner { get; set; }

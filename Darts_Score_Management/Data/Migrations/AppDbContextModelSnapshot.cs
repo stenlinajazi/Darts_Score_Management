@@ -141,6 +141,85 @@ namespace Darts_Score_Management.Migrations
                     b.ToTable("GamePlayers");
                 });
 
+            modelBuilder.Entity("Darts_Score_Management.Data.Models.GameStats", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("CheckoutPercentage")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Count100Plus")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Count140Plus")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Count180s")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Count60Plus")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("CreatedBy")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("DeletedBy")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<decimal>("First9PPD")
+                        .HasPrecision(8, 2)
+                        .HasColumnType("decimal(8,2)");
+
+                    b.Property<int>("GameId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("GamePlayerId")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<int>("LegsWin")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("ModifiedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("ModifiedBy")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<decimal>("PPD")
+                        .HasPrecision(8, 2)
+                        .HasColumnType("decimal(8,2)");
+
+                    b.Property<int>("SetsWin")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("GameId");
+
+                    b.HasIndex("GamePlayerId");
+
+                    b.ToTable("GameStats");
+                });
+
             modelBuilder.Entity("Darts_Score_Management.Data.Models.Leg", b =>
                 {
                     b.Property<int>("Id")
@@ -166,6 +245,82 @@ namespace Darts_Score_Management.Migrations
                         .IsUnique();
 
                     b.ToTable("Legs");
+                });
+
+            modelBuilder.Entity("Darts_Score_Management.Data.Models.LegStats", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("CheckoutPercentage")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Count100Plus")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Count140Plus")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Count180s")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Count60Plus")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("CreatedBy")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("DeletedBy")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<decimal>("First9PPD")
+                        .HasPrecision(8, 2)
+                        .HasColumnType("decimal(8,2)");
+
+                    b.Property<int>("GamePlayerId")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<int>("LegId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("ModifiedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("ModifiedBy")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<decimal>("PPD")
+                        .HasPrecision(8, 2)
+                        .HasColumnType("decimal(8,2)");
+
+                    b.Property<int>("TotalThrows")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("GamePlayerId");
+
+                    b.HasIndex("LegId");
+
+                    b.ToTable("LegStats");
                 });
 
             modelBuilder.Entity("Darts_Score_Management.Data.Models.Player", b =>
@@ -251,6 +406,85 @@ namespace Darts_Score_Management.Migrations
                         .IsUnique();
 
                     b.ToTable("Sets");
+                });
+
+            modelBuilder.Entity("Darts_Score_Management.Data.Models.SetStats", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("CheckoutPercentage")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Count100Plus")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Count140Plus")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Count180s")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Count60Plus")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("CreatedBy")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("DeletedBy")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<decimal>("First9PPD")
+                        .HasPrecision(8, 2)
+                        .HasColumnType("decimal(8,2)");
+
+                    b.Property<int>("GamePlayerId")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<int>("LegsWin")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("ModifiedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("ModifiedBy")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<decimal>("PPD")
+                        .HasPrecision(8, 2)
+                        .HasColumnType("decimal(8,2)");
+
+                    b.Property<int>("SetId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("TotalThrows")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("GamePlayerId");
+
+                    b.HasIndex("SetId");
+
+                    b.ToTable("SetStats");
                 });
 
             modelBuilder.Entity("Darts_Score_Management.Data.Models.Statistic", b =>
@@ -347,6 +581,12 @@ namespace Darts_Score_Management.Migrations
                     b.Property<int>("EndingScore")
                         .HasColumnType("int");
 
+                    b.Property<bool>("IsCheckoutAttempt")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsCheckoutSuccessful")
+                        .HasColumnType("bit");
+
                     b.Property<int>("LegId")
                         .HasColumnType("int");
 
@@ -383,12 +623,31 @@ namespace Darts_Score_Management.Migrations
                     b.HasOne("Darts_Score_Management.Data.Models.Player", "Player")
                         .WithMany("GamePlayers")
                         .HasForeignKey("PlayerId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.Navigation("Game");
 
                     b.Navigation("Player");
+                });
+
+            modelBuilder.Entity("Darts_Score_Management.Data.Models.GameStats", b =>
+                {
+                    b.HasOne("Darts_Score_Management.Data.Models.Game", "Game")
+                        .WithMany("GameStats")
+                        .HasForeignKey("GameId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.HasOne("Darts_Score_Management.Data.Models.GamePlayer", "GamePlayer")
+                        .WithMany("GameStats")
+                        .HasForeignKey("GamePlayerId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Game");
+
+                    b.Navigation("GamePlayer");
                 });
 
             modelBuilder.Entity("Darts_Score_Management.Data.Models.Leg", b =>
@@ -401,11 +660,31 @@ namespace Darts_Score_Management.Migrations
 
                     b.HasOne("Darts_Score_Management.Data.Models.Player", "Winner")
                         .WithMany("WonLegs")
-                        .HasForeignKey("WinnerPlayerId");
+                        .HasForeignKey("WinnerPlayerId")
+                        .OnDelete(DeleteBehavior.SetNull);
 
                     b.Navigation("Set");
 
                     b.Navigation("Winner");
+                });
+
+            modelBuilder.Entity("Darts_Score_Management.Data.Models.LegStats", b =>
+                {
+                    b.HasOne("Darts_Score_Management.Data.Models.GamePlayer", "GamePlayer")
+                        .WithMany("LegStats")
+                        .HasForeignKey("GamePlayerId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Darts_Score_Management.Data.Models.Leg", "Leg")
+                        .WithMany("LegStats")
+                        .HasForeignKey("LegId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.Navigation("GamePlayer");
+
+                    b.Navigation("Leg");
                 });
 
             modelBuilder.Entity("Darts_Score_Management.Data.Models.Set", b =>
@@ -418,11 +697,31 @@ namespace Darts_Score_Management.Migrations
 
                     b.HasOne("Darts_Score_Management.Data.Models.Player", "Winner")
                         .WithMany("WonSets")
-                        .HasForeignKey("WinnerPlayerId");
+                        .HasForeignKey("WinnerPlayerId")
+                        .OnDelete(DeleteBehavior.SetNull);
 
                     b.Navigation("Game");
 
                     b.Navigation("Winner");
+                });
+
+            modelBuilder.Entity("Darts_Score_Management.Data.Models.SetStats", b =>
+                {
+                    b.HasOne("Darts_Score_Management.Data.Models.GamePlayer", "GamePlayer")
+                        .WithMany("SetStats")
+                        .HasForeignKey("GamePlayerId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Darts_Score_Management.Data.Models.Set", "Set")
+                        .WithMany("SetStats")
+                        .HasForeignKey("SetId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.Navigation("GamePlayer");
+
+                    b.Navigation("Set");
                 });
 
             modelBuilder.Entity("Darts_Score_Management.Data.Models.Statistic", b =>
@@ -458,7 +757,7 @@ namespace Darts_Score_Management.Migrations
                     b.HasOne("Darts_Score_Management.Data.Models.Player", "Player")
                         .WithMany("Turns")
                         .HasForeignKey("PlayerId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.Navigation("Leg");
@@ -470,16 +769,26 @@ namespace Darts_Score_Management.Migrations
                 {
                     b.Navigation("GamePlayers");
 
+                    b.Navigation("GameStats");
+
                     b.Navigation("Sets");
                 });
 
             modelBuilder.Entity("Darts_Score_Management.Data.Models.GamePlayer", b =>
                 {
+                    b.Navigation("GameStats");
+
+                    b.Navigation("LegStats");
+
+                    b.Navigation("SetStats");
+
                     b.Navigation("Statistics");
                 });
 
             modelBuilder.Entity("Darts_Score_Management.Data.Models.Leg", b =>
                 {
+                    b.Navigation("LegStats");
+
                     b.Navigation("Turns");
                 });
 
@@ -497,6 +806,8 @@ namespace Darts_Score_Management.Migrations
             modelBuilder.Entity("Darts_Score_Management.Data.Models.Set", b =>
                 {
                     b.Navigation("Legs");
+
+                    b.Navigation("SetStats");
                 });
 
             modelBuilder.Entity("Darts_Score_Management.Data.Models.Turn", b =>

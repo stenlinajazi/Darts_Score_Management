@@ -1,25 +1,18 @@
 ﻿using Darts_Score_Management.DTOs.Game;
+using Darts_Score_Management.DTOs.Statistic;
+using Darts_Score_Management.Enums;
 
 namespace Darts_Score_Management.DTOs.Player
 {
     public class PlayerStatsDTO
     {
-        public int Id { get; set; }
-        public string Name { get; set; }
-        public string Username { get; set; }
-        public string ProfileImageUrl { get; set; }
-        public bool IsActive { get; set; }
+        public int PlayerId { get; set; }
+        public string PlayerName { get; set; }
+        public int TotalLegsPlayed { get; set; }
+        public string LegsWon { get; set; } // e.g., "6/11"
 
-        // Game statistics
-        public int TotalGamesPlayed { get; set; }
-        public int GamesWon { get; set; }
-        public int SetsWon { get; set; }
-        public int LegsWon { get; set; }
+        public Last10StatsDTO Last10LegsStats { get; set; } = new();
+        public AllStatsDTO AllStats { get; set; } = new();
 
-        // Performance statistics per game
-        public ICollection<GameStatisticsDTO> GameStatistics { get; set; }
-
-        // Career averages
-        public CareerAveragesDTO CareerAverages { get; set; }
     }
 }

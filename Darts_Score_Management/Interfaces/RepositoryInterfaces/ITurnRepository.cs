@@ -8,5 +8,6 @@ namespace Darts_Score_Management.Interfaces.RepositoryInterfaces
         Task<Turn> AddTurnWithThrowsAsync(Turn turn);
         Task<Turn> GetLastTurnByLegAsync(int legId);
         Task<Turn> GetLastTurnByPlayerAndLegAsync(int playerId, int legId);
+        Task<IEnumerable<Turn>> GetTurnsByPlayerAndLegAsync(int playerId, int legId);
     }
 }

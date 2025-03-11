@@ -8,8 +8,8 @@ namespace Darts_Score_Management.DTOs.Turn
     {
         public int Id { get; set; }
         public int LegId { get; set; }
-        [JsonIgnore]
-        public LegDTO Leg { get; set; }
+        //[JsonIgnore]
+        //public LegDTO Leg { get; set; }
         public int PlayerId { get; set; }
         public int TurnNumber { get; set; }
         public int StartingScore { get; set; }

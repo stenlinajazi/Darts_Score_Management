@@ -11,5 +11,6 @@
         public Game Game { get; set; }
         public Player Winner { get; set; }
         public List<Leg> Legs { get; set; }
+        public List<SetStats> SetStats { get; set; }
     }
 }

@@ -29,5 +29,23 @@ namespace Darts_Score_Management.Repositories
                 .OrderBy(t => t.TurnNumber)
                 .ToListAsync();
         }
+
+        public async Task<List<GamePlayer>> GetGamePlayersForLegAsync(int legId)
+        {
+            return await _context.Legs
+                 .Include(l => l.Set.Game.GamePlayers)
+                 .Where(l => l.Id == legId)
+                 .Select(l => l.Set.Game.GamePlayers)
+                 .FirstOrDefaultAsync() ?? new List<GamePlayer>();
+        }
+
+        public override async Task<IEnumerable<Leg>> GetAllAsync()
+        {
+            return await _context.Legs
+                .Include(l => l.Turns)
+                    .ThenInclude(t => t.Throws)
+                .Include(l => l.Winner)
+                .ToListAsync();
+        }
     }
 }

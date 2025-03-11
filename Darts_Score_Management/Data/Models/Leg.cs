@@ -11,5 +11,6 @@
         public Set Set { get; set; }
         public Player Winner { get; set; }
         public List<Turn> Turns { get; set; }
+        public List<LegStats> LegStats { get; set; }
     }
 }

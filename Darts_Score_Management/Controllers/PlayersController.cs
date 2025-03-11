@@ -15,7 +15,7 @@ namespace Darts_Score_Management.Controllers
         {
             _playerService = playerService;
         }
-        // GET: api/players
+       
         [HttpGet]
         public async Task<ActionResult<IEnumerable<PlayerDTO>>> GetPlayers()
         {
@@ -23,7 +23,7 @@ namespace Darts_Score_Management.Controllers
             return Ok(players);
         }
 
-        // GET: api/players/active
+        
         [HttpGet("active")]
         public async Task<ActionResult<IEnumerable<PlayerDTO>>> GetActivePlayers()
         {
@@ -31,7 +31,7 @@ namespace Darts_Score_Management.Controllers
             return Ok(players);
         }
 
-        // GET: api/players/5
+        
         [HttpGet("{id}")]
         public async Task<ActionResult<PlayerDTO>> GetPlayer(int id)
         {
@@ -44,6 +44,7 @@ namespace Darts_Score_Management.Controllers
         }
 
         [HttpGet("{id}/stats")]
+        [ApiExplorerSettings(IgnoreApi = true)]
         public async Task<ActionResult<PlayerStatsDTO>> GetPlayerWithStats(int id)
         {
             try
@@ -57,7 +58,7 @@ namespace Darts_Score_Management.Controllers
             }
         }
 
-        // POST: api/players
+
         [HttpPost]
         public async Task<ActionResult<PlayerDTO>> CreatePlayer(UpsertPlayerDTO createPlayerDto)
         {
@@ -65,7 +66,7 @@ namespace Darts_Score_Management.Controllers
             return CreatedAtAction(nameof(GetPlayer), new { id = player.Id }, player);
         }
 
-        // PUT: api/players/5
+      
         [HttpPut("{id}")]
         public async Task<ActionResult<PlayerDTO>> UpdatePlayer(int id, UpsertPlayerDTO upsertPlayerDto)
         {
@@ -80,7 +81,7 @@ namespace Darts_Score_Management.Controllers
             }
         }
 
-        // DELETE: api/players/5
+       
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeletePlayer(int id)
         {

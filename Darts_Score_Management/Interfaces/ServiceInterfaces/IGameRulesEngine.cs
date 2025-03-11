@@ -13,7 +13,7 @@ namespace Darts_Score_Management.Interfaces.ServiceInterfaces
         //int CalculateRemainingScore(int startingScore, List<Throw> throws);
         //bool IsValidThrow(Throw throw_);
 
-        Task<ValidationResult> ValidateThrow(CreateThrowDTO throwDto, int turnId);
+        //Task<ValidationResult> ValidateThrow(CreateThrowDTO throwDto, int turnId);
         //Task<GameStateDTO> ProcessTurn(int turnId, List<CreateThrowDTO> throws);
         Task<GameStateDTO> ProcessTurnForLeg(int legId, List<CreateThrowDTO> throws);
     }

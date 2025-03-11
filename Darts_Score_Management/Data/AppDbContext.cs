@@ -17,6 +17,9 @@ namespace Darts_Score_Management.Data
         public DbSet<Turn> Turns { get; set; }
         public DbSet<Throw> Throws { get; set; }
         public DbSet<Statistic> Statistics { get; set; }
+        public DbSet<LegStats> LegStats { get; set; }
+        public DbSet<SetStats> SetStats { get; set; }
+        public DbSet<GameStats> GameStats { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -66,6 +69,10 @@ namespace Darts_Score_Management.Data
                       .WithOne(s => s.Game)
                       .HasForeignKey(s => s.GameId)
                       .OnDelete(DeleteBehavior.Cascade);
+                entity.HasMany(g => g.GameStats)
+                      .WithOne(gs => gs.Game)
+                      .HasForeignKey(gs => gs.GameId)
+                      .OnDelete(DeleteBehavior.NoAction);
             });
 
             // Serialize GameSettings as JSON
@@ -83,6 +90,22 @@ namespace Darts_Score_Management.Data
                 .HasForeignKey(s => s.GamePlayerId)
                 .OnDelete(DeleteBehavior.Cascade);
 
+            modelBuilder.Entity<GamePlayer>()
+                .HasMany(gp => gp.LegStats)
+                .WithOne(ls => ls.GamePlayer)
+                .HasForeignKey(ls => ls.GamePlayerId)
+                .OnDelete(DeleteBehavior.Cascade); // Cascade from GamePlayer to LegStats
+            modelBuilder.Entity<GamePlayer>()
+                .HasMany(gp => gp.SetStats)
+                .WithOne(ss => ss.GamePlayer)
+                .HasForeignKey(ss => ss.GamePlayerId)
+                .OnDelete(DeleteBehavior.Cascade); // Cascade from GamePlayer to SetStats
+            modelBuilder.Entity<GamePlayer>()
+                .HasMany(gp => gp.GameStats)
+                .WithOne(gs => gs.GamePlayer)
+                .HasForeignKey(gs => gs.GamePlayerId)
+                .OnDelete(DeleteBehavior.Cascade);
+
 
             // Set configuration
             modelBuilder.Entity<Set>()
@@ -90,6 +113,11 @@ namespace Darts_Score_Management.Data
                 .WithOne(l => l.Set)
                 .HasForeignKey(l => l.SetId)
                 .OnDelete(DeleteBehavior.Cascade);
+            modelBuilder.Entity<Set>()
+                .HasMany(s => s.SetStats)
+                .WithOne(ss => ss.Set)
+                .HasForeignKey(ss => ss.SetId)
+                .OnDelete(DeleteBehavior.NoAction);
 
 
             // Leg configuration
@@ -98,6 +126,11 @@ namespace Darts_Score_Management.Data
                 .WithOne(t => t.Leg)
                 .HasForeignKey(t => t.LegId)
                 .OnDelete(DeleteBehavior.Cascade);
+            modelBuilder.Entity<Leg>()
+                .HasMany(l => l.LegStats)
+                .WithOne(ls => ls.Leg)
+                .HasForeignKey(ls => ls.LegId)
+                .OnDelete(DeleteBehavior.NoAction);
 
 
             // Turn configuration
@@ -107,7 +140,42 @@ namespace Darts_Score_Management.Data
                 .HasForeignKey(th => th.TurnId)
                 .OnDelete(DeleteBehavior.Cascade);
 
+            // LegStats configuration
+            modelBuilder.Entity<LegStats>()
+                .HasKey(ls => ls.Id);
 
+            // SetStats configuration
+            modelBuilder.Entity<SetStats>()
+                .HasKey(ss => ss.Id);
+
+            // GameStats configuration
+            modelBuilder.Entity<GameStats>()
+                .HasKey(gs => gs.Id);
+           
+            modelBuilder.Entity<LegStats>()
+                .Property(ls => ls.PPD)
+                .HasPrecision(8, 2);
+            modelBuilder.Entity<LegStats>()
+                .Property(ls => ls.First9PPD)
+                .HasPrecision(8, 2);
+
+           
+
+          
+            modelBuilder.Entity<SetStats>()
+                .Property(ss => ss.PPD)
+                .HasPrecision(8, 2);
+            modelBuilder.Entity<SetStats>()
+                .Property(ss => ss.First9PPD)
+                .HasPrecision(8, 2);
+
+         
+            modelBuilder.Entity<GameStats>()
+                .Property(gs => gs.PPD)
+                .HasPrecision(8, 2);
+            modelBuilder.Entity<GameStats>()
+                .Property(gs => gs.First9PPD)
+                .HasPrecision(8, 2);
             // Indexes for better performance
             modelBuilder.Entity<GamePlayer>()
                 .HasIndex(gp => new { gp.GameId, gp.PlayerId })

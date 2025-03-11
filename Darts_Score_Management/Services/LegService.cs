@@ -4,6 +4,7 @@ using Darts_Score_Management.Data.Models;
 using Darts_Score_Management.DTOs.Leg;
 using Darts_Score_Management.Interfaces.RepositoryInterfaces;
 using Darts_Score_Management.Interfaces.ServiceInterfaces;
+using Microsoft.EntityFrameworkCore;
 
 namespace Darts_Score_Management.Services
 {
@@ -52,8 +53,21 @@ namespace Darts_Score_Management.Services
         public async Task<LegDTO> UpdateLegAsync(Leg leg)
         {
             await _legRepository.UpdateAsync(leg);
-            var updatedLeg = await _legRepository.GetByIdAsync(leg.Id); // Fetch the updated entity
+            var updatedLeg = await _legRepository.GetByIdAsync(leg.Id); 
             return _mapper.Map<LegDTO>(updatedLeg);
+        }
+
+        public async Task<List<GamePlayer>> GetGamePlayersForLegAsync(int legId)
+        {
+            var gamePlayers = await _legRepository.GetGamePlayersForLegAsync(legId);
+            if (gamePlayers == null || !gamePlayers.Any())
+                throw new KeyNotFoundException($"No game players found for Leg with ID {legId}.");
+            var leg = await _legRepository.GetLegWithDetailsAsync(legId);
+            if (leg == null)
+                throw new KeyNotFoundException($"Leg with ID {legId} not found.");
+            if (leg.Set == null || leg.Set.Game == null)
+                throw new KeyNotFoundException($"Leg with ID {legId} has invalid relationships (Set or Game not found).");
+            return gamePlayers;
         }
     }
 }

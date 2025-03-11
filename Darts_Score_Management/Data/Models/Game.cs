@@ -17,5 +17,6 @@ namespace Darts_Score_Management.Data.Models
         // Navigation properties
         public List<GamePlayer> GamePlayers { get; set; }
         public List<Set> Sets { get; set; }
+        public List<GameStats> GameStats { get; set; }
     }
 }

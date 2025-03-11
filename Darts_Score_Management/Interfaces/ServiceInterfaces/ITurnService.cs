@@ -1,4 +1,5 @@
-﻿using Darts_Score_Management.DTOs.Throw;
+﻿using Darts_Score_Management.Data.Models;
+using Darts_Score_Management.DTOs.Throw;
 using Darts_Score_Management.DTOs.Turn;
 
 namespace Darts_Score_Management.Interfaces.ServiceInterfaces
@@ -15,6 +16,7 @@ namespace Darts_Score_Management.Interfaces.ServiceInterfaces
         Task<TurnDTO> GetLastTurnByPlayerAndLegAsync(int playerId, int legId);
 
         Task<IEnumerable<ThrowDTO>> GetThrowsForTurnAsync(int turnId); 
-        Task<ThrowDTO> GetLastThrowForTurnAsync(int turnId); 
+        Task<ThrowDTO> GetLastThrowForTurnAsync(int turnId);
+        Task<IEnumerable<Turn>> GetPlayerTurnsInLegAsync(int playerId, int legId);
     }
 }

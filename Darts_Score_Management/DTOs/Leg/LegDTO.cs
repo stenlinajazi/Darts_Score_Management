@@ -9,8 +9,8 @@ namespace Darts_Score_Management.DTOs.Leg
     {
         public int Id { get; set; }
         public int SetId { get; set; }
-        [JsonIgnore]
-        public SetDTO Set { get; set; }
+        //[JsonIgnore]
+        //public SetDTO Set { get; set; }
         public int LegNumber { get; set; }
         public int? WinnerPlayerId { get; set; }
         public PlayerDTO Winner { get; set; }
