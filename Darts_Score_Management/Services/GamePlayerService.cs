@@ -34,31 +34,5 @@ namespace Darts_Score_Management.Services
             var gamePlayers = await _gamePlayerRepository.GetGamePlayersForGameAsync(gameId);
             return _mapper.Map<IEnumerable<GamePlayerDTO>>(gamePlayers);
         }
-
-        //public async Task<GamePlayerDTO> UpdateGamePlayerStatsAsync(int id, List<StatisticDTO> stats)
-        //{
-        //    var gamePlayer = await _gamePlayerRepository.GetByIdAsync(id);
-        //    if (gamePlayer == null)
-        //        throw new KeyNotFoundException($"GamePlayer with id {id} not found");
-
-        //    var statistics = _mapper.Map<List<Statistic>>(stats);
-        //    await _statisticRepository.UpdateStatisticsAsync(id, statistics);
-
-        //    return await GetGamePlayerByIdAsync(id);
-        //}
-
-        //public async Task<GamePlayerDTO> SetGamePlayerWinnerAsync(int gameId, int playerId)
-        //{
-        //    var gamePlayers = await _gamePlayerRepository.GetGamePlayersForGameAsync(gameId);
-        //    var winner = gamePlayers.FirstOrDefault(gp => gp.PlayerId == playerId);
-
-        //    if (winner == null)
-        //        throw new KeyNotFoundException($"Player with id {playerId} not found in game {gameId}");
-
-        //    winner.IsWinner = true;
-        //    await _gamePlayerRepository.UpdateAsync(winner);
-
-        //    return _mapper.Map<GamePlayerDTO>(winner);
-        //}
     }
 }

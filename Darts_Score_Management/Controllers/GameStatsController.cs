@@ -70,19 +70,5 @@ namespace Darts_Score_Management.Controllers
                 return StatusCode(500, new { message = "An error occurred while retrieving game stats.", error = ex.Message });
             }
         }
-
-        [HttpGet("history")]
-        public async Task<IActionResult> GetGameHistory()
-        {
-            try
-            {
-                var history = await _statisticService.GetGameHistoryAsync();
-                return Ok(history);
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, new { message = "An error occurred while retrieving game history.", error = ex.Message });
-            }
-        }
     }
 }

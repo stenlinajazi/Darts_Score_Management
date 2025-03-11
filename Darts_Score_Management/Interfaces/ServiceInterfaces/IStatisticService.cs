@@ -16,6 +16,5 @@ namespace Darts_Score_Management.Interfaces.ServiceInterfaces
         Task<SetStatsDTO> GetSetStatsAsync(int setId, int gamePlayerId);
         Task<GameStatsDTO> GetGameStatsAsync(int gameId, int gamePlayerId);
         Task<PlayerStatsDTO> GetPlayerStatsAsync(int playerId);
-        Task<List<GameStatsDTO>> GetGameHistoryAsync();
     }
 }

@@ -6,7 +6,6 @@ namespace Darts_Score_Management.Services
 {
     public static class StatisticCalculator
     {
-        // Calculates Points Per Dart (PPD) for different statistical collections
         public static decimal CalculatePPD(IEnumerable<Turn> turns)
         {
             if (IsNullOrEmpty(turns)) return 0;
@@ -15,7 +14,6 @@ namespace Darts_Score_Management.Services
             return CalculatePPDFromPointsAndThrows(totalPoints, totalDarts);
         } 
         
-        // Calculates Points Per Dart for Leg Statistics
         public static decimal CalculatePPDAggregate(IEnumerable<LegStats> legStats)
         {
             if (IsNullOrEmpty(legStats)) return 0;
@@ -24,7 +22,6 @@ namespace Darts_Score_Management.Services
             return CalculatePPDFromPointsAndThrows(totalPoints, totalThrows);
         }
         
-        // Calculates Points Per Dart for Set Statistics
         public static decimal CalculatePPDAggregate(IEnumerable<SetStats> setStats)
         {
             if (IsNullOrEmpty(setStats)) return 0;
@@ -33,9 +30,6 @@ namespace Darts_Score_Management.Services
             return CalculatePPDFromPointsAndThrows(totalPoints, totalThrows);
         }
 
-        // Calculates First 9 Darts PPD for Turns
-        // Important: When a turn is busted, we still count the darts in the denominator,
-        // but we don't add the points to the numerator
         public static decimal CalculateFirst9PPD(IEnumerable<Turn> turns)
         {
             if (IsNullOrEmpty(turns)) return 0;
@@ -48,19 +42,14 @@ namespace Darts_Score_Management.Services
             {
                 bool turnIsBusted = turn.Throws.Any(th => th.IsBusted);
 
-                // For each turn, count all darts toward the 9 total
-                // but only add points if the turn isn't busted
                 int turnsThrowCount = turn.Throws.Count;
-
-                // If adding all darts from this turn would exceed 9, limit it
                 int dartsToCount = Math.Min(turnsThrowCount, 9 - dartCount);
 
                 if (dartsToCount <= 0) break;
-
-                // Only add points if the turn isn't busted
+ 
                 if (!turnIsBusted)
                 {
-                    // Sum the points from this turn's throws (up to our limit) 
+                   
                     var throwPoints = turn.Throws
                         .Take(dartsToCount)
                         .Sum(th => th.Multiplier * th.Segment);
@@ -68,13 +57,11 @@ namespace Darts_Score_Management.Services
                     totalPoints += throwPoints;
                 }
 
-                // Always increment the dart count
                 dartCount += dartsToCount;
 
                 if (dartCount >= 9) break;
             }
 
-            // Always divide by the actual number of darts counted, up to 9
             return CalculatePPDFromPointsAndThrows(totalPoints, dartCount);
         }
 
@@ -85,14 +72,12 @@ namespace Darts_Score_Management.Services
             decimal totalWeightedPoints = 0;
             int totalDarts = 0;
 
-            // For each leg, consider its first 9 darts
+     
             foreach (var legStat in legStats)
             {
-                // Each leg contributes its First9PPD * the number of darts used (up to 9)
-                // For First9PPD, we assume this is always calculated based on at most 9 darts
                 int dartsInThisLeg = legStat.TotalThrows >= 9 ? 9 : legStat.TotalThrows;
 
-                // Calculate weighted points contribution
+           
                 decimal pointsFromThisLeg = legStat.First9PPD * dartsInThisLeg;
 
                 totalWeightedPoints += pointsFromThisLeg;
@@ -102,8 +87,7 @@ namespace Darts_Score_Management.Services
             return totalDarts > 0 ? Math.Round(totalWeightedPoints / totalDarts, 2) : 0;
         }
 
-        // Calculates First 9 Darts PPD for Set Statistics
-        // Follows the same logic as for leg statistics
+  
         public static decimal CalculateFirst9PPDAggregate(IEnumerable<SetStats> setStats)
         {
             if (IsNullOrEmpty(setStats)) return 0;
@@ -111,14 +95,10 @@ namespace Darts_Score_Management.Services
             decimal totalWeightedPoints = 0;
             int totalDarts = 0;
 
-            // For each set, consider its First9PPD contribution
             foreach (var setStat in setStats)
             {
-                // Each set contributes its First9PPD * the number of darts used (up to 9)
-                // Assuming each set has a proper First9PPD calculated from up to 9 darts
-                int dartsInThisSet = 9; // We should always use 9 darts per set for First9PPD
+                int dartsInThisSet = 9; 
 
-                // Calculate weighted points contribution
                 decimal pointsFromThisSet = setStat.First9PPD * dartsInThisSet;
 
                 totalWeightedPoints += pointsFromThisSet;
@@ -178,7 +158,6 @@ namespace Darts_Score_Management.Services
         {
             if (turn == null || IsNullOrEmpty(turn.Throws)) return 0;
 
-            // Check if turn contains any busted throws
             if (turn.Throws.Any(th => th.IsBusted)) return 0;
 
             return turn.Throws.Sum(th => th.Multiplier * th.Segment);

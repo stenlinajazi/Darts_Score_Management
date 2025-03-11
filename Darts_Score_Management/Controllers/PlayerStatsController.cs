@@ -12,7 +12,7 @@ namespace Darts_Score_Management.Controllers
 
         public PlayerStatsController(IStatisticService statisticService)
         {
-            _statisticService = statisticService ?? throw new ArgumentNullException(nameof(statisticService));
+            _statisticService = statisticService;
         }
 
         [HttpGet("{playerId}/stats")]

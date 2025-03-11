@@ -70,9 +70,6 @@ namespace Darts_Score_Management.Services
                 };
             }
 
-            //game.DeletedBy = string.Empty;
-            //game.ModifiedBy = string.Empty;
-
             var gamePlayers = createGameDto.PlayerIds.Select((playerId, index) => new GamePlayer
             {
                 PlayerId = playerId,
@@ -125,7 +122,7 @@ namespace Darts_Score_Management.Services
                 winner.FinalRanking = 1;
             }
 
-            // Get the latest leg in the game (last set, last leg)
+         
             var latestLeg = game.Sets
                 .OrderByDescending(s => s.SetNumber)
                 .SelectMany(s => s.Legs)
@@ -144,7 +141,7 @@ namespace Darts_Score_Management.Services
                 playerScores[player.PlayerId] = endingScore;
             }
 
-            // Rank losers based on ending score (ascending: least points = higher rank)
+            
             int ranking = 2;
             foreach (var player in gamePlayers
                 .Where(gp => gp.PlayerId != winnerId)

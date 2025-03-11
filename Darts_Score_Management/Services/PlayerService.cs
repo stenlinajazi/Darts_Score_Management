@@ -33,9 +33,7 @@ namespace Darts_Score_Management.Services
         {
             var player = _mapper.Map<Player>(createPlayerDto);
             player.IsActive = true;
-            //player.DeletedBy = string.Empty;
-            //player.ModifiedBy = string.Empty;
-
+         
             var createdPlayer = await _playerRepository.AddAsync(player);
             return _mapper.Map<PlayerDTO>(createdPlayer);
         }

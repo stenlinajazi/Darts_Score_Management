@@ -3,7 +3,7 @@
     public interface IGameValidationService
     {
         Task<bool> ValidateTurnOrder(int turnId, int playerId);
-        Task<bool> ValidateMaximumThrows(int turnId);
-        Task<bool> ValidateGameInProgress(int gameId);
+        //Task<bool> ValidateMaximumThrows(int turnId);
+        //Task<bool> ValidateGameInProgress(int gameId);
     }
 }

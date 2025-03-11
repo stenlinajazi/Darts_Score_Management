@@ -80,12 +80,7 @@ namespace Darts_Score_Management.Profiles
             // PlayerStats mappings (derived on-demand)
             CreateMap<Player, PlayerStatsDTO>()
                 .ForMember(dest => dest.PlayerName, opt => opt.MapFrom(src => src.Name));
-                //.ForMember(dest => dest.Last10LegsStats, opt => opt.MapFrom(src => src.Last10LegsStats)) // Ensure mapping
-                //.ForMember(dest => dest.AllStats, opt => opt.MapFrom(src => src.AllStats)); // Ensure mapping
-
-
-            //.ForMember(dest => dest.Last10LegsStats, opt => opt.Ignore())
-            //.ForMember(dest => dest.AllStats, opt => opt.Ignore());
+     
 
             CreateMap<PlayerStatsDTO, PlayerStatsDTO>().ReverseMap();
         }

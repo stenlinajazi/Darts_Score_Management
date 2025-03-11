@@ -108,20 +108,7 @@ namespace Darts_Score_Management.Services
             return CalculatePlayerStats(last10LegStats, gamePlayers);
         }
 
-        public async Task<List<GameStatsDTO>> GetGameHistoryAsync()
-        {
-            var gameStats = await _gameStatsRepository.GetAllAsync();
-            var history = new List<GameStatsDTO>();
-
-            foreach (var gameStat in gameStats)
-            {
-                var sets = await _setStatsRepository.GetSetsForGameAsync(gameStat.GameId);
-                var legs = await _legStatsRepository.GetLegsForGameAsync(gameStat.GameId);
-                var historyEntry = AggregateGameHistory(gameStat, sets, legs);
-                history.Add(_mapper.Map<GameStatsDTO>(historyEntry));
-            }
-            return history;
-        }
+      
 
         private async Task<List<GamePlayer>> GetGamePlayersForSetAsync(int setId)
         {
@@ -262,7 +249,7 @@ namespace Darts_Score_Management.Services
                 throw new NullReferenceException("No game players found for the given player ID.");
             var playerId = gamePlayers.First().PlayerId;
             var playerName = gamePlayers.First().Player?.Name ?? throw new NullReferenceException("Player name is null.");
-            // Total legs played and won
+         
             var allLegStats = gamePlayers.SelectMany(gp => gp.LegStats ?? Enumerable.Empty<LegStats>()).ToList();
             var allLegStatsCombined = allLegStats.Concat(last10LegStats)
                 .DistinctBy(ls => ls.Id) 
@@ -274,7 +261,7 @@ namespace Darts_Score_Management.Services
             var last10Stats = new Last10StatsDTO();
             var allStats = new AllStatsDTO();
 
-            // Calculate stats for last 10 legs
+          
             if (last10LegStats.Any())
             {
                 last10Stats.PPD = new StatSummary
@@ -340,42 +327,7 @@ namespace Darts_Score_Management.Services
                 AllStats = allStats
             };
             }
-        
-
-        private GameStats AggregateGameHistory(GameStats gameStat, IEnumerable<SetStats> sets, IEnumerable<LegStats> legs)
-        {
-            var totalThrows = sets.Sum(ss => ss.TotalThrows);
-            var ppd = StatisticCalculator.CalculatePPDAggregate(sets);
-            var first9PPD = StatisticCalculator.CalculateFirst9PPDAggregate(sets);
-            var setsWon = sets.Count(ss => ss.Set.WinnerPlayerId == gameStat.GamePlayer.PlayerId); // Simplified logic
-            var legsWon = legs.Count(ls => ls.Leg.WinnerPlayerId == gameStat.GamePlayer.PlayerId);
-            var playerTurns = legs.SelectMany(ls => _context.Turns
-             .Where(t => t.LegId == ls.LegId && t.PlayerId == gameStat.GamePlayer.PlayerId));
-            var checkoutPercentage = StatisticCalculator.CalculateCheckoutPercentage(playerTurns);
-            var count60Plus = sets.Sum(ss => ss.Count60Plus) + legs.Sum(ls => ls.Count60Plus);
-            var count100Plus = sets.Sum(ss => ss.Count100Plus) + legs.Sum(ls => ls.Count100Plus);
-            var count140Plus = sets.Sum(ss => ss.Count140Plus) + legs.Sum(ls => ls.Count140Plus);
-            var count180s = sets.Sum(ss => ss.Count180s) + legs.Sum(ls => ls.Count180s);
-           
-
-            return new GameStats
-            {
-                GamePlayerId = gameStat.GamePlayerId,
-                GameId = gameStat.GameId,
-                SetsWin = setsWon,
-                LegsWin = legsWon,
-                PPD = ppd,
-                First9PPD = first9PPD,
-                
-             //   CheckoutPercentage = checkoutPercentage,
-                Count60Plus = count60Plus,
-                Count100Plus = count100Plus,
-                Count140Plus = count140Plus,
-                Count180s = count180s,
-                CreatedAt = gameStat.CreatedAt,
-                CreatedBy = gameStat.CreatedBy,
-                IsDeleted = gameStat.IsDeleted
-            };
+       
         }
     }
-}
+
