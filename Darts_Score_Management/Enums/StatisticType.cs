@@ -16,6 +16,7 @@
         Count180s,          // Number of 180s
         TotalThrows,        // Total number of throws
         HighestCheckout,    // Highest checkout achieved
-        AverageCheckout     // Average checkout score
+        AverageCheckout,     // Average checkout score
+        WinPercentage
     }
 }

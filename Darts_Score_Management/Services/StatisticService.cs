@@ -150,6 +150,8 @@ namespace Darts_Score_Management.Services
         private async Task<List<GamePlayer>> GetPlayerGamePlayersAsync(int playerId)
         {
             return await _context.GamePlayers
+                .Include(gp => gp.Player)
+                .Include(gp => gp.LegStats)
                 .Where(gp => gp.PlayerId == playerId)
                 .ToListAsync();
         }
@@ -256,66 +258,89 @@ namespace Darts_Score_Management.Services
 
         private PlayerStatsDTO CalculatePlayerStats(IEnumerable<LegStats> last10LegStats, IEnumerable<GamePlayer> gamePlayers)
         {
+            if (!gamePlayers.Any())
+                throw new NullReferenceException("No game players found for the given player ID.");
             var playerId = gamePlayers.First().PlayerId;
-            var playerName = gamePlayers.First().Player.Name; // Assuming Player has a Name property
-            var totalLegsPlayed = last10LegStats.Count() + (gamePlayers.Sum(gp => gp.LegStats?.Count ?? 0) - last10LegStats.Count()); // Total from all games
-            var legsWon = last10LegStats.Count(ls => ls.Leg.WinnerPlayerId == playerId) + (gamePlayers.Sum(gp => gp.LegStats?.Count(ls => ls.Leg.WinnerPlayerId == playerId) ?? 0) - last10LegStats.Count(ls => ls.Leg.WinnerPlayerId == playerId));
+            var playerName = gamePlayers.First().Player?.Name ?? throw new NullReferenceException("Player name is null.");
+            // Total legs played and won
+            var allLegStats = gamePlayers.SelectMany(gp => gp.LegStats ?? Enumerable.Empty<LegStats>()).ToList();
+            var allLegStatsCombined = allLegStats.Concat(last10LegStats)
+                .DistinctBy(ls => ls.Id) 
+                .ToList();
+            var totalLegsPlayed = allLegStatsCombined.Count;
+            var legsWon = allLegStatsCombined.Count(ls => ls.Leg?.WinnerPlayerId == playerId);
             var legsLost = totalLegsPlayed - legsWon;
 
-            var last10LegsStats = new Dictionary<StatisticType, StatSummary>();
-            var allStats = new Dictionary<StatisticType, StatTotals>();
+            var last10Stats = new Last10StatsDTO();
+            var allStats = new AllStatsDTO();
 
             // Calculate stats for last 10 legs
             if (last10LegStats.Any())
             {
-                last10LegsStats[StatisticType.PPD] = new StatSummary
+                last10Stats.PPD = new StatSummary
                 {
-                    Average = last10LegStats.Average(ls => ls.PPD),
-                    Best = last10LegStats.Max(ls => ls.PPD)
+                    Average = Math.Round(last10LegStats.Average(ls => ls.PPD), 2),
+                    Best = Math.Round(last10LegStats.Max(ls => ls.PPD), 2)
                 };
-                last10LegsStats[StatisticType.First9PPD] = new StatSummary
+                last10Stats.First9PPD = new StatSummary
                 {
-                    Average = last10LegStats.Average(ls => ls.First9PPD),
-                    Best = last10LegStats.Max(ls => ls.First9PPD)
+                    Average = Math.Round(last10LegStats.Average(ls => ls.First9PPD), 2),
+                    Best = Math.Round(last10LegStats.Max(ls => ls.First9PPD), 2)
+                };
+
+                var last10Turns = last10LegStats.SelectMany(ls => _context.Turns
+                    .Where(t => t.LegId == ls.LegId && t.PlayerId == playerId));
+
+                last10Stats.CheckoutPercentage = new StatSummary
+                {
+                    Average = StatisticCalculator.CalculateCheckoutPercentage(last10Turns),
+                    Best = Math.Round((decimal)last10LegStats.Max(ls => ls.CheckoutPercentage), 2)
+                };
+
+                var winsInLast10 = last10LegStats.Count(ls => ls.Leg?.WinnerPlayerId == playerId);
+                last10Stats.WinPercentage = new StatSummary
+                {
+                    Average = Math.Round((decimal)winsInLast10 / last10LegStats.Count() * 100, 1),
+                    Best = Math.Round((decimal)last10LegStats.Count(ls => ls.Leg?.WinnerPlayerId == playerId) / last10LegStats.Count() * 100, 1)
                 };
             }
 
             // Calculate totals for all stats
-            var allLegStats = gamePlayers.SelectMany(gp => gp.LegStats ?? Enumerable.Empty<LegStats>());
-            if (allLegStats.Any())
+
+            allStats.Count60Plus = new StatTotals
             {
-                allStats[StatisticType.Count60Plus] = new StatTotals
-                {
-                    Total = allLegStats.Sum(ls => ls.Count60Plus),
-                    PerLeg = allLegStats.Any() ? Math.Round((decimal)allLegStats.Sum(ls => ls.Count60Plus) / allLegStats.Count(), 2) : 0
-                };
-                allStats[StatisticType.Count100Plus] = new StatTotals
-                {
-                    Total = allLegStats.Sum(ls => ls.Count100Plus),
-                    PerLeg = allLegStats.Any() ? Math.Round((decimal)allLegStats.Sum(ls => ls.Count100Plus) / allLegStats.Count(), 2) : 0
-                };
-                allStats[StatisticType.Count140Plus] = new StatTotals
-                {
-                    Total = allLegStats.Sum(ls => ls.Count140Plus),
-                    PerLeg = allLegStats.Any() ? Math.Round((decimal)allLegStats.Sum(ls => ls.Count140Plus) / allLegStats.Count(), 2) : 0
-                };
-                allStats[StatisticType.Count180s] = new StatTotals
-                {
-                    Total = allLegStats.Sum(ls => ls.Count180s),
-                    PerLeg = allLegStats.Any() ? Math.Round((decimal)allLegStats.Sum(ls => ls.Count180s) / allLegStats.Count(), 2) : 0
-                };
-            }
+                Total = allLegStatsCombined.Any() ? allLegStatsCombined.Sum(ls => ls.Count60Plus) : 0,
+                PerLeg = allLegStatsCombined.Any() ? Math.Round((decimal)allLegStatsCombined.Sum(ls => ls.Count60Plus) / allLegStatsCombined.Count, 1) : 0
+            };
+            allStats.Count100Plus = new StatTotals
+            {
+                Total = allLegStatsCombined.Any() ? allLegStatsCombined.Sum(ls => ls.Count100Plus) : 0,
+                PerLeg = allLegStatsCombined.Any() ? Math.Round((decimal)allLegStatsCombined.Sum(ls => ls.Count100Plus) / allLegStatsCombined.Count, 1) : 0
+            };
+
+            allStats.Count140Plus = new StatTotals
+            {
+                Total = allLegStatsCombined.Any() ? allLegStatsCombined.Sum(ls => ls.Count140Plus) : 0,
+                PerLeg = allLegStatsCombined.Any() ? Math.Round((decimal)allLegStatsCombined.Sum(ls => ls.Count140Plus) / allLegStatsCombined.Count, 1) : 0
+            };
+
+            allStats.Count180s = new StatTotals
+            {
+                Total = allLegStatsCombined.Any() ? allLegStatsCombined.Sum(ls => ls.Count180s) : 0,
+                PerLeg = allLegStatsCombined.Any() ? Math.Round((decimal)allLegStatsCombined.Sum(ls => ls.Count180s) / allLegStatsCombined.Count, 1) : 0
+            };
 
             return new PlayerStatsDTO
-            {
+                {
                 PlayerId = playerId,
                 PlayerName = playerName,
                 TotalLegsPlayed = totalLegsPlayed,
                 LegsWon = $"{legsWon}/{totalLegsPlayed}",
-                Last10LegsStats = last10LegsStats,
+                Last10LegsStats = last10Stats,
                 AllStats = allStats
             };
-        }
+            }
+        
 
         private GameStats AggregateGameHistory(GameStats gameStat, IEnumerable<SetStats> sets, IEnumerable<LegStats> legs)
         {
