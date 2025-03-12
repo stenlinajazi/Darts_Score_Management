@@ -9,6 +9,8 @@ namespace Darts_Score_Management.Interfaces.RepositoryInterfaces
         Task<IEnumerable<PlayerGameSummaryDTO>> GetPlayerGamesAsync(int playerId);
         // Task<Game> CreateGameAsync(Game game, List<int> playerIds);
         Task<Game> CreateGameWithPlayersAsync(Game game, IEnumerable<GamePlayer> gamePlayers);
-        Task<IEnumerable<Game>> GetAllSummariesAsync();
+        //Task<IEnumerable<GameListResponseDTO>> GetAllSummariesAsync();
+        Task<IEnumerable<GameListResponseDTO>> GetAllSummariesAsync();
+        Task<GameDetailsResponseDTO> GetGameWithDetailsAndHistoryAsync(int id);
     }
 }

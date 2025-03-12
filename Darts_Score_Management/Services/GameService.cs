@@ -26,18 +26,27 @@ namespace Darts_Score_Management.Services
             _legService = legService;
             _turnService = turnService;
         }
-        public async Task<IEnumerable<GameDTO>> GetAllGamesAsync()
-        {
-           var games = await _gameRepository.GetAllAsync();
-           return _mapper.Map<IEnumerable<GameDTO>>(games);
+         public async Task<IEnumerable<GameListResponseDTO>> GetAllSummariesAsync()
+         {
+            return await _gameRepository.GetAllSummariesAsync();
         }
+
         public async Task<GameDTO> GetGameByIdAsync(int id)
         {
             var game = await _gameRepository.GetGameWithDetailsAsync(id);
             return _mapper.Map<GameDTO>(game);
         }
 
-      
+        public async Task<GameDetailsResponseDTO> GetGameWithDetailsAndHistoryAsync(int id)
+        {
+            return await _gameRepository.GetGameWithDetailsAndHistoryAsync(id);
+        }
+
+        public async Task<IEnumerable<PlayerGameSummaryDTO>> GetPlayerGamesAsync(int playerId)
+        {
+            return await _gameRepository.GetPlayerGamesAsync(playerId);
+        }
+
         public async Task<GameDTO> CreateGameAsync(CreateGameDTO createGameDto)
         {
             if (createGameDto == null) throw new ArgumentNullException(nameof(createGameDto));
@@ -82,27 +91,21 @@ namespace Darts_Score_Management.Services
             return await GetGameByIdAsync(createdGame.Id);
         }
 
-        public async Task<GameDTO> UpdateGameAsync(int id, GameDTO gameDto)
-        {
-            var game = await _gameRepository.GetByIdAsync(id);
-            if (game == null)
-                throw new KeyNotFoundException($"Game with id {id} not found");
+        //public async Task<GameDTO> UpdateGameAsync(int id, GameDTO gameDto)
+        //{
+        //    var game = await _gameRepository.GetByIdAsync(id);
+        //    if (game == null)
+        //        throw new KeyNotFoundException($"Game with id {id} not found");
 
-            _mapper.Map(gameDto, game);
-            await _gameRepository.UpdateAsync(game);
-            return _mapper.Map<GameDTO>(game);
-        }
+        //    _mapper.Map(gameDto, game);
+        //    await _gameRepository.UpdateAsync(game);
+        //    return _mapper.Map<GameDTO>(game);
+        //}
 
         public async Task DeleteGameAsync(int id)
         {
             await _gameRepository.DeleteAsync(id);
         }
-
-        public async Task<IEnumerable<PlayerGameSummaryDTO>> GetPlayerGamesAsync(int playerId)
-        {
-            return await _gameRepository.GetPlayerGamesAsync(playerId);
-        }
-        
 
         public async Task<GameDTO> EndGameAsync(int id, int winnerId)
         {
@@ -122,7 +125,7 @@ namespace Darts_Score_Management.Services
                 winner.FinalRanking = 1;
             }
 
-         
+
             var latestLeg = game.Sets
                 .OrderByDescending(s => s.SetNumber)
                 .SelectMany(s => s.Legs)
@@ -141,7 +144,7 @@ namespace Darts_Score_Management.Services
                 playerScores[player.PlayerId] = endingScore;
             }
 
-            
+
             int ranking = 2;
             foreach (var player in gamePlayers
                 .Where(gp => gp.PlayerId != winnerId)
@@ -180,11 +183,6 @@ namespace Darts_Score_Management.Services
             }
         }
 
-        public async Task<IEnumerable<GameSummaryDTO>> GetAllGameSummariesAsync()
-        {
-            var games = await _gameRepository.GetAllSummariesAsync();
-            return _mapper.Map<IEnumerable<GameSummaryDTO>>(games);
-        }
-
+       
     }
 }

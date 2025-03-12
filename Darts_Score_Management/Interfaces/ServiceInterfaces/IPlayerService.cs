@@ -10,6 +10,6 @@ namespace Darts_Score_Management.Interfaces.ServiceInterfaces
         Task<PlayerDTO> UpdatePlayerAsync(int id, UpsertPlayerDTO playerDto);
         Task DeletePlayerAsync(int id);
         Task<IEnumerable<PlayerDTO>> GetActivePlayersAsync();
-        Task<PlayerStatsDTO> GetPlayerWithStatsAsync(int id);
+        //Task<PlayerStatsDTO> GetPlayerWithStatsAsync(int id);
     }
 }

@@ -25,8 +25,7 @@ namespace Darts_Score_Management.Services
 
         public async Task<IEnumerable<PlayerDTO>> GetAllPlayersAsync()
         {
-            var players = await _playerRepository.GetAllAsync();
-            return _mapper.Map<IEnumerable<PlayerDTO>>(players);
+            return await _playerRepository.GetAllPlayerDTOsAsync();
         }
 
         public async Task<PlayerDTO> CreatePlayerAsync(UpsertPlayerDTO createPlayerDto)
@@ -62,13 +61,13 @@ namespace Darts_Score_Management.Services
             return _mapper.Map<IEnumerable<PlayerDTO>>(players);
         }
 
-        public async Task<PlayerStatsDTO> GetPlayerWithStatsAsync(int id)
-        {
-            var player = await _playerRepository.GetPlayerWithStatsAsync(id);
-            if (player == null)
-                throw new KeyNotFoundException($"Player with id {id} not found");
+        //public async Task<PlayerStatsDTO> GetPlayerWithStatsAsync(int id)
+        //{
+        //    var player = await _playerRepository.GetPlayerWithStatsAsync(id);
+        //    if (player == null)
+        //        throw new KeyNotFoundException($"Player with id {id} not found");
 
-            return _mapper.Map<PlayerStatsDTO>(player);
-        }
+        //    return _mapper.Map<PlayerStatsDTO>(player);
+        //}
     }
 }
