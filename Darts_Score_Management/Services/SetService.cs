@@ -24,15 +24,15 @@ namespace Darts_Score_Management.Services
 
         public async Task<SetDTO> GetSetByIdAsync(int id)
         {
-            var set = await _setRepository.GetSetWithLegsAsync(id);
+            Set set = await _setRepository.GetSetWithLegsAsync(id);
             if (set == null)
                 return null;
 
-            var setDto = _mapper.Map<SetDTO>(set);
+            SetDTO setDto = _mapper.Map<SetDTO>(set);
 
             if (set.WinnerPlayerId.HasValue)
             {
-                var winner = await _playerRepository.GetByIdAsync(set.WinnerPlayerId.Value);
+                Player winner = await _playerRepository.GetByIdAsync(set.WinnerPlayerId.Value);
                 setDto.Winner = _mapper.Map<PlayerDTO>(winner);
             }
 
@@ -41,14 +41,14 @@ namespace Darts_Score_Management.Services
 
         public async Task<SetDTO> CreateSetAsync(CreateSetDTO createSetDto)
         {
-            var set = _mapper.Map<Set>(createSetDto);
-            var createdSet = await _setRepository.AddAsync(set);
+            Set set = _mapper.Map<Set>(createSetDto);
+            Set createdSet = await _setRepository.AddAsync(set);
             return _mapper.Map<SetDTO>(createdSet);
         }
 
         public async Task<SetDTO> EndSetAsync(int id, int winnerId)
         {
-            var set = await _setRepository.GetByIdAsync(id);
+            Set set = await _setRepository.GetByIdAsync(id);
             if (set == null)
                 throw new KeyNotFoundException($"Set with id {id} not found");
 
@@ -59,16 +59,16 @@ namespace Darts_Score_Management.Services
 
         public async Task<IEnumerable<SetDTO>> GetSetsByGameIdAsync(int gameId)
         {
-            var sets = await _setRepository.GetSetsForGameAsync(gameId);
-            var result = new List<SetDTO>();
+            IEnumerable<Set> sets = await _setRepository.GetSetsForGameAsync(gameId);
+            List<SetDTO> result = new List<SetDTO>();
 
             foreach (var set in sets)
             {
-                var setDto = _mapper.Map<SetDTO>(set);
+                SetDTO setDto = _mapper.Map<SetDTO>(set);
 
                 if (set.WinnerPlayerId.HasValue)
                 {
-                    var winner = await _playerRepository.GetByIdAsync(set.WinnerPlayerId.Value);
+                    Player winner = await _playerRepository.GetByIdAsync(set.WinnerPlayerId.Value);
                     setDto.Winner = _mapper.Map<PlayerDTO>(winner);
                 }
 

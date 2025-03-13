@@ -13,6 +13,7 @@ namespace Darts_Score_Management.Repositories
     public class GameRepository : BaseRepository<Game>, IGameRepository
     {
         public GameRepository(AppDbContext context) : base(context) { }
+
         //public async Task<IEnumerable<Game>> GetAllSummariesAsync()
         //{
         //    return await _context.Games
@@ -29,8 +30,6 @@ namespace Darts_Score_Management.Repositories
         //         })
         //         .ToListAsync();
         //}
-
-
         public async Task<IEnumerable<GameListResponseDTO>> GetAllSummariesAsync()
         {
             return await _context.Games
@@ -54,9 +53,6 @@ namespace Darts_Score_Management.Repositories
                 .ToListAsync();
         }
 
-
-
-
         public async Task<Game> GetGameWithDetailsAsync(int id)
         {
             return await _context.Games
@@ -69,54 +65,82 @@ namespace Darts_Score_Management.Repositories
                 .FirstOrDefaultAsync(g => g.Id == id);
         }
 
-
         public async Task<GameDetailsResponseDTO> GetGameWithDetailsAndHistoryAsync(int id)
         {
-            // Step 1: Load the game with its related entities
+            // Step 1: Load basic game data with minimal includes
             var game = await _context.Games
+                .AsNoTracking()
                 .Include(g => g.GamePlayers)
                     .ThenInclude(gp => gp.Player)
-                .Include(g => g.Sets)
-                    .ThenInclude(s => s.Legs)
-                        .ThenInclude(l => l.Turns)
-                            .ThenInclude(t => t.Throws)
                 .FirstOrDefaultAsync(g => g.Id == id);
-
             if (game == null)
                 throw new KeyNotFoundException($"Game with ID {id} not found.");
 
-            // Batch fetch GameStats, SetStats, and LegStats for all GamePlayers in the game
-            var gamePlayerIds = game.GamePlayers.Select(gp => gp.Id).ToList();
-            var gameStats = await _context.GameStats
+            // Step 2: Get IDs to use in subsequent queries
+            List<int> gamePlayerIds  = game.GamePlayers.Select(gp => gp.Id).ToList();
+            List<int> playerIds = game.GamePlayers.Select(gp => gp.PlayerId).ToList();
+
+            // Step 3: Load sets separately
+            var sets = await _context.Sets
+             .AsNoTracking()
+             .Where(s => s.GameId == id)
+             .Select(s => new { s.Id, s.GameId, s.SetNumber, s.WinnerPlayerId })
+             .ToListAsync();
+            List<int> setIds = sets.Select(s => s.Id).ToList();
+
+            // Step 4: Load legs separately with minimal data
+            var legs = await _context.Legs
+                .AsNoTracking()
+                .Where(l => setIds.Contains(l.SetId))
+                .Select(l => new { l.Id, l.SetId, l.LegNumber, l.WinnerPlayerId })
+                .ToListAsync();
+            List<int> legIds = legs.Select(l => l.Id).ToList();
+
+            // Step 5: Get all stats in separate, focused queries
+            List<GameStats> gameStats = await _context.GameStats
+                .AsNoTracking()
                 .Where(gs => gs.GameId == id && gamePlayerIds.Contains(gs.GamePlayerId))
                 .ToListAsync();
-            var setStats = await _context.SetStats
-                .Where(ss => game.Sets.Select(s => s.Id).Contains(ss.SetId) && gamePlayerIds.Contains(ss.GamePlayerId))
+
+            List<SetStats> setStats = await _context.SetStats
+                .AsNoTracking()
+                .Where(ss => setIds.Contains(ss.SetId) && gamePlayerIds.Contains(ss.GamePlayerId))
                 .ToListAsync();
-            var legIds = game.Sets.SelectMany(s => s.Legs).Select(l => l.Id).ToList();
-            var legStats = await _context.LegStats
-                .Include(ls => ls.Leg)
-                .ThenInclude(l => l.Turns)
-                .ThenInclude(t => t.Throws)
+
+            List<LegStats> legStats = await _context.LegStats
+                .AsNoTracking()
                 .Where(ls => legIds.Contains(ls.LegId) && gamePlayerIds.Contains(ls.GamePlayerId))
                 .ToListAsync();
 
-            // Group stats by GamePlayerId for easy mapping
-            var gameStatsDictionary = gameStats.ToDictionary(gs => gs.GamePlayerId, gs => gs);
-            var setStatsDictionary = setStats
+            // Step 6: Load turns and throws 
+            List<Turn> turnsWithThrows = await _context.Turns
+                .AsNoTracking()
+                .Include(t => t.Throws)
+                .Where(t => legIds.Contains(t.LegId) && playerIds.Contains(t.PlayerId))
+                .ToListAsync();
+
+            // Step 7: Organize the results in memory for easy lookup
+            Dictionary<int, GameStats> gameStatsDictionary = gameStats.ToDictionary(gs => gs.GamePlayerId, gs => gs);
+
+            Dictionary<int, List<SetStats>> setStatsDictionary = setStats
                 .GroupBy(ss => ss.GamePlayerId)
                 .ToDictionary(g => g.Key, g => g.ToList());
-            var legStatsDictionary = legStats
+
+            Dictionary<int, List<LegStats>> legStatsDictionary = legStats
                 .GroupBy(ls => ls.GamePlayerId)
                 .ToDictionary(g => g.Key, g => g.ToList());
 
-            // Build the response
+            var turnsByLegAndPlayer = turnsWithThrows
+                .GroupBy(t => new { t.LegId, t.PlayerId })
+                .ToDictionary(g => g.Key, g => g.OrderBy(t => t.TurnNumber).ToList());
+
+            // Step 8: Build the response
             var response = new GameDetailsResponseDTO
             {
                 Id = game.Id,
                 Type = game.Type.ToString(),
                 StartingScore = game.StartingScore,
-                SetsToWin = game.Settings?.SetsToWin ?? 0, 
+                SetsToWin = game.Settings?.SetsToWin ?? 0,
                 StartedAt = game.StartedAt,
                 EndedAt = game.EndedAt,
                 IsComplete = game.IsComplete,
@@ -130,8 +154,8 @@ namespace Darts_Score_Management.Repositories
                         {
                             SetsWin = gs.SetsWin,
                             LegsWin = gs.LegsWin,
-                            PPD = (decimal)gs.PPD,
-                            First9PPD = (decimal)gs.First9PPD,
+                            PPD = gs.PPD,
+                            First9PPD = gs.First9PPD,
                             CheckoutPercentage = gs.CheckoutPercentage.ToString(),
                             Count60Plus = gs.Count60Plus,
                             Count100Plus = gs.Count100Plus,
@@ -154,20 +178,24 @@ namespace Darts_Score_Management.Repositories
                         }).ToList()
                         : new List<SetStatsDTO>(),
                     LegStats = legStatsDictionary.TryGetValue(gp.Id, out var lsList)
-                        ? lsList.Select(ls => new LegStatsDTO
+                        ? lsList.Select(ls =>
                         {
-                            LegId = ls.LegId,
-                            PPD = (decimal)ls.PPD,
-                            First9PPD = (decimal)ls.First9PPD,
-                            TotalThrows = ls.TotalThrows,
-                            CheckoutPercentage = ls.CheckoutPercentage.ToString(),
-                            Count60Plus = ls.Count60Plus,
-                            Count100Plus = ls.Count100Plus,
-                            Count140Plus = ls.Count140Plus,
-                            Count180s = ls.Count180s,
-                            History = ls.Leg.Turns
-                                .Where(t => t.PlayerId == gp.PlayerId)
-                                .Select(t => new TurnHistoryDTO
+                            // Find turns for this player in this leg
+                            var key = new { LegId = ls.LegId, PlayerId = gp.PlayerId };
+                            List<Turn> turns = turnsByLegAndPlayer.TryGetValue(key, out var t) ? t : new List<Turn>();
+
+                            return new LegStatsDTO
+                            {
+                                LegId = ls.LegId,
+                                PPD = (decimal)ls.PPD,
+                                First9PPD = (decimal)ls.First9PPD,
+                                TotalThrows = ls.TotalThrows,
+                                CheckoutPercentage = ls.CheckoutPercentage.ToString(),
+                                Count60Plus = ls.Count60Plus,
+                                Count100Plus = ls.Count100Plus,
+                                Count140Plus = ls.Count140Plus,
+                                Count180s = ls.Count180s,
+                                History = turns.Select(t => new TurnHistoryDTO
                                 {
                                     TurnId = t.Id,
                                     EndingScore = t.EndingScore,
@@ -177,6 +205,7 @@ namespace Darts_Score_Management.Repositories
                                         Multiplier = th.Multiplier
                                     }).ToList()
                                 }).ToList()
+                            };
                         }).ToList()
                         : new List<LegStatsDTO>()
                 }).ToList()
@@ -184,8 +213,6 @@ namespace Darts_Score_Management.Repositories
 
             return response;
         }
-
-
 
         public async Task<IEnumerable<PlayerGameSummaryDTO>> GetPlayerGamesAsync(int playerId)
         {
@@ -221,7 +248,6 @@ namespace Darts_Score_Management.Repositories
                  .ToListAsync();
         }
 
-
         public async Task<Game> CreateGameWithPlayersAsync(Game game, IEnumerable<GamePlayer> gamePlayers)
         {
             using var transaction = await _context.Database.BeginTransactionAsync();
@@ -249,8 +275,5 @@ namespace Darts_Score_Management.Repositories
                 throw;
             }
         }
-
-        
-
     }
 }

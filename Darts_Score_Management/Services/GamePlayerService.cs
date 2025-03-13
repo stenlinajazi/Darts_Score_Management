@@ -25,13 +25,13 @@ namespace Darts_Score_Management.Services
 
         public async Task<GamePlayerDTO> GetGamePlayerByIdAsync(int id)
         {
-            var gamePlayer = await _gamePlayerRepository.GetGamePlayerWithStatsAsync(id);
+            GamePlayer gamePlayer = await _gamePlayerRepository.GetGamePlayerWithStatsAsync(id);
             return _mapper.Map<GamePlayerDTO>(gamePlayer);
         }
 
         public async Task<IEnumerable<GamePlayerDTO>> GetGamePlayersByGameIdAsync(int gameId)
         {
-            var gamePlayers = await _gamePlayerRepository.GetGamePlayersForGameAsync(gameId);
+            IEnumerable<GamePlayer> gamePlayers = await _gamePlayerRepository.GetGamePlayersForGameAsync(gameId);
             return _mapper.Map<IEnumerable<GamePlayerDTO>>(gamePlayers);
         }
     }

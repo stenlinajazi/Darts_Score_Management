@@ -25,7 +25,7 @@ namespace Darts_Score_Management.Services
 
         public async Task<TurnDTO> GetTurnByIdAsync(int turnId)
         {
-            var turn = await _turnRepository.GetByIdAsync(turnId);
+            Turn turn = await _turnRepository.GetByIdAsync(turnId);
             if (turn == null)
                 throw new KeyNotFoundException($"Turn with id {turnId} not found");
 
@@ -34,7 +34,7 @@ namespace Darts_Score_Management.Services
 
         public async Task<TurnDTO> CreateTurnAsync(CreateTurnDTO createTurnDto)
         {
-            var turn = new Turn
+            Turn turn = new Turn
             {
                 LegId = createTurnDto.LegId,
                 PlayerId = createTurnDto.PlayerId,
@@ -43,23 +43,23 @@ namespace Darts_Score_Management.Services
                 EndingScore = createTurnDto.StartingScore 
             };
 
-            var createdTurn = await _turnRepository.AddAsync(turn);
+            Turn createdTurn = await _turnRepository.AddAsync(turn);
             return _mapper.Map<TurnDTO>(createdTurn);
         }
 
         public async Task<TurnDTO> AddThrowToTurnAsync(int turnId, CreateThrowDTO throwDto)
         {
-            var turn = await _turnRepository.GetTurnWithThrowsAsync(turnId);
+            Turn turn = await _turnRepository.GetTurnWithThrowsAsync(turnId);
             if (turn == null)
                 throw new KeyNotFoundException($"Turn with id {turnId} not found");
-           
-            var newThrow = new Throw
+
+            Throw newThrow = new Throw
             {
                 TurnId = turnId,
                 ThrowNumber = turn.Throws.Count + 1,
                 Segment = throwDto.Segment,
                 Multiplier = throwDto.Multiplier,
-                IsBusted = false // Default to false, will be set to true if this throw busts
+                IsBusted = false 
             };
 
         
@@ -70,25 +70,25 @@ namespace Darts_Score_Management.Services
 
         public async Task<TurnDTO> GetLastTurnByLegAsync(int legId)
         {
-            var turn = await _turnRepository.GetLastTurnByLegAsync(legId);
+            Turn turn = await _turnRepository.GetLastTurnByLegAsync(legId);
             return  _mapper.Map<TurnDTO>(turn);
         }
 
         public async Task<TurnDTO> GetLastTurnByPlayerAndLegAsync(int playerId, int legId)
         {
-            var turn = await _turnRepository.GetLastTurnByPlayerAndLegAsync(playerId, legId);
+            Turn turn = await _turnRepository.GetLastTurnByPlayerAndLegAsync(playerId, legId);
             return _mapper.Map<TurnDTO>(turn);
         }
 
         public async Task<IEnumerable<ThrowDTO>> GetThrowsForTurnAsync(int turnId)
         {
-            var throws = await _throwRepository.GetThrowsForTurnAsync(turnId);
+            IEnumerable<Throw> throws = await _throwRepository.GetThrowsForTurnAsync(turnId);
             return _mapper.Map<IEnumerable<ThrowDTO>>(throws);
         }
 
         public async Task<ThrowDTO> GetLastThrowForTurnAsync(int turnId)
         {
-            var throws = await GetThrowsForTurnAsync(turnId);
+            IEnumerable<ThrowDTO> throws = await GetThrowsForTurnAsync(turnId);
             return throws?.OrderByDescending(t => t.ThrowNumber).FirstOrDefault();
         }
 

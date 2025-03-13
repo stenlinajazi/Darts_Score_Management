@@ -61,7 +61,7 @@ namespace Darts_Score_Management.Services
             try
             {
 
-                var turn = await SetupNewTurn(legId);
+                Turn turn = await SetupNewTurn(legId);
 
                 if (!await ValidateLegIsActive(legId, turn.PlayerId))
                     throw new GameRuleViolationException("Cannot make throws to this leg - you must complete active legs and sets first", "LegSequence");
@@ -69,7 +69,7 @@ namespace Darts_Score_Management.Services
                 if (!await _validationService.ValidateTurnOrder(turn.Id, turn.PlayerId))
                     throw new GameRuleViolationException("Invalid turn order", "TurnOrder");
 
-                var gameState = await ProcessThrows(turn, throws);
+                GameStateDTO gameState = await ProcessThrows(turn, throws);
 
                 if (!gameState.IsBusted && gameState.LegComplete)
                 {
@@ -88,7 +88,7 @@ namespace Darts_Score_Management.Services
         }
         private async Task<Turn> SetupNewTurn(int legId)
         {
-            var leg = await _legService.GetLegByIdAsync(legId);
+            Leg leg = await _legService.GetLegByIdAsync(legId);
             if (leg == null)
                 throw new ArgumentException($"Leg with ID {legId} not found");
 
@@ -96,18 +96,18 @@ namespace Darts_Score_Management.Services
             if (leg.WinnerPlayerId != null)
                 throw new GameRuleViolationException($"Leg {legId} is already complete and cannot accept further throws", "LegComplete");
 
-            var lastTurnDto = await _turnService.GetLastTurnByLegAsync(legId);
+            TurnDTO lastTurnDto = await _turnService.GetLastTurnByLegAsync(legId);
             Turn lastTurn = _mapper.Map<Turn>(lastTurnDto);
 
             int playerId = DetermineNextPlayer(leg, lastTurn);
             int turnNumber = lastTurn?.TurnNumber + 1 ?? 1;
 
             // Get starting score for this player
-            var lastPlayerTurnDto = await _turnService.GetLastTurnByPlayerAndLegAsync(playerId, legId);
+            TurnDTO lastPlayerTurnDto = await _turnService.GetLastTurnByPlayerAndLegAsync(playerId, legId);
             Turn lastPlayerTurn = _mapper.Map<Turn>(lastPlayerTurnDto);
             int startingScore = lastPlayerTurn?.EndingScore ?? leg.Set.Game.StartingScore;
 
-            var createTurnDto = new CreateTurnDTO
+            CreateTurnDTO createTurnDto = new CreateTurnDTO
             {
                 LegId = legId,
                 PlayerId = playerId,
@@ -115,14 +115,14 @@ namespace Darts_Score_Management.Services
                 StartingScore = startingScore
             };
 
-            var turnDto = await _turnService.CreateTurnAsync(createTurnDto);
+            TurnDTO turnDto = await _turnService.CreateTurnAsync(createTurnDto);
             return await _turnRepository.GetTurnWithThrowsAsync(turnDto.Id);
         }
         // Process all throws in a turn
         private async Task<GameStateDTO> ProcessThrows(Turn turn, List<CreateThrowDTO> throws)
         {
-            var gameState = new GameStateDTO();
-            var bustAnalysis = AnalyzeThrowsForBust(turn, throws);
+            GameStateDTO gameState = new GameStateDTO();
+            BustAnalysisResult bustAnalysis = AnalyzeThrowsForBust(turn, throws);
 
             if (bustAnalysis.HasBust)
             {
@@ -141,7 +141,7 @@ namespace Darts_Score_Management.Services
 
             for (int i = 0; i < throws.Count; i++)
             {
-                var throwDto = throws[i];
+                CreateThrowDTO throwDto = throws[i];
                 if (!IsValidDartSegment(throwDto.Segment, throwDto.Multiplier))
                 {
                     return new BustAnalysisResult
@@ -152,8 +152,8 @@ namespace Darts_Score_Management.Services
                     };
                 }
                 int points = CalculatePoints(throwDto.Segment, throwDto.Multiplier);
-                int newScore = simulatedScore - points; 
-                var game = _gameService.GetGameByIdAsync(turn.Leg.Set.GameId).Result;
+                int newScore = simulatedScore - points;
+                GameDTO game = _gameService.GetGameByIdAsync(turn.Leg.Set.GameId).Result;
                 // Check for bust conditions
                 if (newScore < 0)
                 {
@@ -205,9 +205,9 @@ namespace Darts_Score_Management.Services
             // Process throws up to and including the bust
             for (int i = 0; i < throws.Count; i++)
             {
-                var throwDto = throws[i];
+                CreateThrowDTO throwDto = throws[i];
                 // Create and add the throw directly to the turn entity
-                var newThrow = new Throw
+                Throw newThrow = new Throw
                 {
                     TurnId = turn.Id,
                     ThrowNumber = turn.Throws.Count + 1,
@@ -230,17 +230,17 @@ namespace Darts_Score_Management.Services
         private async Task ProcessSuccessfulTurn(Turn turn, List<CreateThrowDTO> throws, GameStateDTO gameState)
         {
             int currentScore = turn.StartingScore;
-            var game = await _gameService.GetGameByIdAsync(turn.Leg.Set.GameId);
+            GameDTO game = await _gameService.GetGameByIdAsync(turn.Leg.Set.GameId);
             ThrowDTO lastThrow = null;
 
             turn.IsCheckoutAttempt = IsCheckoutPossible(turn.StartingScore);
 
-            foreach (var throwDto in throws)
+            foreach (CreateThrowDTO throwDto in throws)
             {
                 int points = CalculatePoints(throwDto.Segment, throwDto.Multiplier);
                 currentScore -= points;
      
-                var newThrow = new Throw
+                Throw newThrow = new Throw
                 {
                     TurnId = turn.Id,
                     ThrowNumber = turn.Throws.Count + 1,
@@ -266,14 +266,14 @@ namespace Darts_Score_Management.Services
         private async Task CompleteLeg(Turn turn, GameStateDTO gameState, ThrowDTO lastThrow)
         {
             // Update leg with winner
-            var leg = await _legService.GetLegByIdAsync(turn.LegId);
+            Leg leg = await _legService.GetLegByIdAsync(turn.LegId);
             if (leg != null)
             {
                 leg.WinnerPlayerId = turn.PlayerId;
                 await _legService.UpdateLegAsync(leg);
 
                 // Update leg-level statistics after processing the turn
-                var gamePlayers = await _legService.GetGamePlayersForLegAsync(turn.LegId);
+                List<GamePlayer> gamePlayers = await _legService.GetGamePlayersForLegAsync(turn.LegId);
                 if (gamePlayers == null || !gamePlayers.Any())
                     throw new KeyNotFoundException($"No game players found for Leg with ID {turn.LegId}.");
                 await _statisticService.UpdateLegStatsAsync(turn.LegId, gamePlayers);
@@ -304,7 +304,7 @@ namespace Darts_Score_Management.Services
         private int DetermineNextPlayer(Leg leg, Turn lastTurn)
         {
             // Logic to determine the next player based on turn order in the leg
-            var gamePlayers = leg.Set.Game.GamePlayers.OrderBy(gp => gp.TurnOrder).ToList();//retrieve all players in the game ordered by their turn order
+            List<GamePlayer> gamePlayers = leg.Set.Game.GamePlayers.OrderBy(gp => gp.TurnOrder).ToList();//retrieve all players in the game ordered by their turn order
             if (lastTurn == null)
                 return gamePlayers[0].PlayerId; // First turn, start with lowest TurnOrder
 
@@ -315,16 +315,14 @@ namespace Darts_Score_Management.Services
 
          private async Task CheckSetCompletion(Turn turn, GameStateDTO gameState)
          {
-            var leg = await _legService.GetLegByIdAsync(turn.LegId);
-            var set = await _setService.GetSetByIdAsync(leg.SetId);
-            var game = await _gameService.GetGameByIdAsync(set.GameId);
-            var legsWon = set.Legs.Count(l => l.WinnerPlayerId == turn.PlayerId);
-            var totalLegs = set.Legs.Count;
+            Leg leg = await _legService.GetLegByIdAsync(turn.LegId);
+            SetDTO set = await _setService.GetSetByIdAsync(leg.SetId);
+            GameDTO game = await _gameService.GetGameByIdAsync(set.GameId);
+            int legsWon = set.Legs.Count(l => l.WinnerPlayerId == turn.PlayerId);
+            int totalLegs = set.Legs.Count;
            
-
-            // Count legs won by each player to determine if there's a tie
             var players = set.Legs.Select(l => l.WinnerPlayerId).Distinct().Where(id => id.HasValue).Select(id => id.Value).ToList();
-            var legsWonPerPlayer = players.ToDictionary(p => p, p => set.Legs.Count(l => l.WinnerPlayerId == p));
+            Dictionary<int, int> legsWonPerPlayer = players.ToDictionary(p => p, p => set.Legs.Count(l => l.WinnerPlayerId == p));
             bool isTie = players.Count > 1 && players.All(p => legsWonPerPlayer[p] == legsWonPerPlayer[players[0]]);
 
             if (legsWon >= game.Settings.LegsPerSet)
@@ -336,20 +334,19 @@ namespace Darts_Score_Management.Services
             }
             else if (isTie && totalLegs == game.Settings.LegsPerSet)
             {
-                // If there's a tie (e.g., 1-1 for LegsPerSet = 2), create a tiebreaker leg
+               
                 await CreateTiebreakerLeg(set.Id, game.Settings.LegsPerSet);
             }
         }
 
         private async Task CheckGameCompletion(Turn turn, GameStateDTO gameState)
         {
-            var game = await _gameService.GetGameByIdAsync(turn.Leg.Set.GameId);
-            var setsWon = game.Sets.Count(s => s.WinnerPlayerId == turn.PlayerId);
-            var totalSets = game.Sets.Count;
-
-            // Count sets won by each player to determine if there's a tie
+            GameDTO game = await _gameService.GetGameByIdAsync(turn.Leg.Set.GameId);
+            int setsWon = game.Sets.Count(s => s.WinnerPlayerId == turn.PlayerId);
+            int totalSets = game.Sets.Count;
+      
             var players = game.Sets.Select(s => s.WinnerPlayerId).Distinct().Where(id => id.HasValue).Select(id => id.Value).ToList();
-            var setsPerPlayer = players.ToDictionary(p => p, p => game.Sets.Count(s => s.WinnerPlayerId == p));
+            Dictionary<int, int> setsPerPlayer = players.ToDictionary(p => p, p => game.Sets.Count(s => s.WinnerPlayerId == p));
             bool isTie = players.Count > 1 && players.All(p => setsPerPlayer[p] == setsPerPlayer[players[0]]);
 
             if (setsWon >= game.Settings.SetsToWin)
@@ -361,16 +358,16 @@ namespace Darts_Score_Management.Services
             }
             else if (isTie && totalSets == game.Settings.SetsToWin)
             {
-                // If there's a tie (e.g., 1-1 for SetsToWin = 2), create a tiebreaker set
+               
                 await CreateTiebreakerSet(game.Id, game.Settings.SetsToWin);
             }   
         }
 
         private async Task CreateTiebreakerLeg(int setId, int legsPerSet)
         {
-            var set = await _setService.GetSetByIdAsync(setId);
-            var totalLegs = set.Legs.Count;
-            var newLegNumber = totalLegs + 1;
+            SetDTO set = await _setService.GetSetByIdAsync(setId);
+            int totalLegs = set.Legs.Count;
+            int newLegNumber = totalLegs + 1;
 
             var createLegDto = new CreateLegDTO
             {
@@ -383,23 +380,23 @@ namespace Darts_Score_Management.Services
 
         private async Task CreateTiebreakerSet(int gameId, int setsToWin)
         {
-            var game = await _gameService.GetGameByIdAsync(gameId);
-            var totalSets = game.Sets.Count;
-            var newSetNumber = totalSets + 1;
+            GameDTO game = await _gameService.GetGameByIdAsync(gameId);
+            int totalSets = game.Sets.Count;
+            int newSetNumber = totalSets + 1;
 
-            var createSetDto = new CreateSetDTO
+            CreateSetDTO createSetDto = new CreateSetDTO
             {
                 GameId = gameId,
                 SetNumber = newSetNumber
             };
 
-            var setDto = await _setService.CreateSetAsync(createSetDto);
+            SetDTO setDto = await _setService.CreateSetAsync(createSetDto);
 
             // Create initial legs for the new set based on LegsPerSet
             int initialLegs = game.Settings.LegsPerSet;
             for (int legNumber = 1; legNumber <= initialLegs; legNumber++)
             {
-                var createLegDto = new CreateLegDTO
+                CreateLegDTO createLegDto = new CreateLegDTO
                 {
                     SetId = setDto.Id,
                     LegNumber = legNumber
@@ -410,15 +407,15 @@ namespace Darts_Score_Management.Services
         }
         private async Task<bool> ValidateLegIsActive(int legId, int playerId)
         {
-            var leg = await _legService.GetLegByIdAsync(legId);
+            Leg leg = await _legService.GetLegByIdAsync(legId);
             if (leg == null)
                 return false;
 
-            var set = await _setService.GetSetByIdAsync(leg.SetId);
+            SetDTO set = await _setService.GetSetByIdAsync(leg.SetId);
             if (set == null)
                 return false;
 
-            var game = await _gameService.GetGameByIdAsync(set.GameId);
+            GameDTO game = await _gameService.GetGameByIdAsync(set.GameId);
             if (game == null)
                 return false;
 
@@ -428,8 +425,8 @@ namespace Darts_Score_Management.Services
                 return false;
 
             // Check if the set is active (previous sets are all completed)
-            var sets = await _setService.GetSetsByGameIdAsync(game.Id);
-            var orderedSets = sets.OrderBy(s => s.SetNumber).ToList();
+            IEnumerable<SetDTO> sets = await _setService.GetSetsByGameIdAsync(game.Id);
+            List<SetDTO> orderedSets = sets.OrderBy(s => s.SetNumber).ToList();
 
             // Find the current set's position
             int currentSetIndex = orderedSets.FindIndex(s => s.Id == set.Id);
@@ -442,8 +439,8 @@ namespace Darts_Score_Management.Services
             }
 
             // Check if the leg is active (previous legs in this set are all completed)
-            var legs = await _legService.GetLegsBySetIdAsync(set.Id);
-            var orderedLegs = legs.OrderBy(l => l.LegNumber).ToList();
+            IEnumerable<LegDTO> legs = await _legService.GetLegsBySetIdAsync(set.Id);
+            List<LegDTO> orderedLegs = legs.OrderBy(l => l.LegNumber).ToList();
 
             // Find the current leg's position
             int currentLegIndex = orderedLegs.FindIndex(l => l.Id == legId);

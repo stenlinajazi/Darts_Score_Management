@@ -196,6 +196,40 @@ namespace Darts_Score_Management.Data
             modelBuilder.Entity<Throw>()
                 .HasIndex(t => new { t.TurnId, t.ThrowNumber })
                 .IsUnique();
+
+            modelBuilder.Entity<Turn>()
+                .HasIndex(t => t.LegId);
+          
+            modelBuilder.Entity<Leg>()
+                .HasIndex(l => l.SetId);
+
+            modelBuilder.Entity<Set>()
+                .HasIndex(s => s.GameId);
+
+            modelBuilder.Entity<LegStats>()
+                .HasIndex(ls => new { ls.GamePlayerId, ls.LegId });
+        
+            modelBuilder.Entity<SetStats>()
+                .HasIndex(ss => new { ss.GamePlayerId, ss.SetId });
+          
+            modelBuilder.Entity<GameStats>()
+                .HasIndex(gs => new { gs.GamePlayerId, gs.GameId });
+
+            modelBuilder.Entity<GamePlayer>()
+                .HasIndex(gp => gp.PlayerId);
+
+          
+
+            modelBuilder.Entity<LegStats>()
+                .HasIndex(ls => ls.LegId);  
+
+            modelBuilder.Entity<SetStats>()
+                .HasIndex(ss => ss.SetId);  
+
+            modelBuilder.Entity<Turn>()
+                .HasIndex(t => t.PlayerId);  
+
+
         }
 
     }

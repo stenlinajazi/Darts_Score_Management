@@ -3,6 +3,7 @@ using Darts_Score_Management.Data.Models;
 using Darts_Score_Management.DTOs.Game;
 using Darts_Score_Management.DTOs.Leg;
 using Darts_Score_Management.DTOs.Set;
+using Darts_Score_Management.DTOs.Turn;
 using Darts_Score_Management.Interfaces.RepositoryInterfaces;
 using Darts_Score_Management.Interfaces.ServiceInterfaces;
 using System.ComponentModel.DataAnnotations;
@@ -33,7 +34,7 @@ namespace Darts_Score_Management.Services
 
         public async Task<GameDTO> GetGameByIdAsync(int id)
         {
-            var game = await _gameRepository.GetGameWithDetailsAsync(id);
+            Game game = await _gameRepository.GetGameWithDetailsAsync(id);
             return _mapper.Map<GameDTO>(game);
         }
 
@@ -65,7 +66,7 @@ namespace Darts_Score_Management.Services
             if (createGameDto.StartingScore != 301 && createGameDto.StartingScore != 501 && createGameDto.StartingScore != 701)
                 throw new ValidationException("Starting score must be 301, 501, or 701");
 
-            var game = _mapper.Map<Game>(createGameDto);
+            Game game = _mapper.Map<Game>(createGameDto);
             game.StartedAt = DateTime.UtcNow;
             game.IsComplete = false;
 
@@ -79,13 +80,13 @@ namespace Darts_Score_Management.Services
                 };
             }
 
-            var gamePlayers = createGameDto.PlayerIds.Select((playerId, index) => new GamePlayer
+            List<GamePlayer> gamePlayers = createGameDto.PlayerIds.Select((playerId, index) => new GamePlayer
             {
                 PlayerId = playerId,
                 TurnOrder = index + 1 // Initialize TurnOrder based on the order of PlayerIds in the list
             }).ToList();
 
-            var createdGame = await _gameRepository.CreateGameWithPlayersAsync(game, gamePlayers);
+            Game createdGame = await _gameRepository.CreateGameWithPlayersAsync(game, gamePlayers);
             // Automatically create sets and legs for a best-of game
             await CreateSetsAndLegsForGame(createdGame, createGameDto.Settings.SetsToWin, createGameDto.Settings.LegsPerSet);
             return await GetGameByIdAsync(createdGame.Id);
@@ -109,7 +110,7 @@ namespace Darts_Score_Management.Services
 
         public async Task<GameDTO> EndGameAsync(int id, int winnerId)
         {
-            var game = await _gameRepository.GetGameWithDetailsAsync(id);
+            Game game = await _gameRepository.GetGameWithDetailsAsync(id);
             if (game == null)
                 throw new KeyNotFoundException($"Game with id {id} not found");
 
@@ -117,8 +118,8 @@ namespace Darts_Score_Management.Services
             game.EndedAt = DateTime.UtcNow;
 
             // Set winner and rankings
-            var gamePlayers = game.GamePlayers.ToList();
-            var winner = gamePlayers.FirstOrDefault(gp => gp.PlayerId == winnerId);
+            List<GamePlayer> gamePlayers = game.GamePlayers.ToList();
+            GamePlayer winner = gamePlayers.FirstOrDefault(gp => gp.PlayerId == winnerId);
             if (winner != null)
             {
                 winner.IsWinner = true;
@@ -126,7 +127,7 @@ namespace Darts_Score_Management.Services
             }
 
 
-            var latestLeg = game.Sets
+            Leg latestLeg = game.Sets
                 .OrderByDescending(s => s.SetNumber)
                 .SelectMany(s => s.Legs)
                 .OrderByDescending(l => l.LegNumber)
@@ -136,10 +137,10 @@ namespace Darts_Score_Management.Services
                 throw new InvalidOperationException("No legs found in the game");
 
             // Fetch ending scores for all players from their last turn in the latest leg
-            var playerScores = new Dictionary<int, int>();
-            foreach (var player in gamePlayers)
+            Dictionary<int, int> playerScores = new Dictionary<int, int>();
+            foreach (GamePlayer player in gamePlayers)
             {
-                var lastTurnDto = await _turnService.GetLastTurnByPlayerAndLegAsync(player.PlayerId, latestLeg.Id);
+                TurnDTO lastTurnDto = await _turnService.GetLastTurnByPlayerAndLegAsync(player.PlayerId, latestLeg.Id);
                 int endingScore = lastTurnDto?.EndingScore ?? game.StartingScore;
                 playerScores[player.PlayerId] = endingScore;
             }
@@ -162,17 +163,17 @@ namespace Darts_Score_Management.Services
             
             for (int setNumber = 1; setNumber <= setsToWin; setNumber++)
             {
-                var createSetDto = new CreateSetDTO
+                CreateSetDTO createSetDto = new CreateSetDTO
                 {
                     GameId = game.Id,
                     SetNumber = setNumber
                 };
 
-                var setDto = await _setService.CreateSetAsync(createSetDto);
+                SetDTO setDto = await _setService.CreateSetAsync(createSetDto);
 
                 for (int legNumber = 1; legNumber <= legsPerSet; legNumber++)
                 {
-                    var createLegDto = new CreateLegDTO
+                    CreateLegDTO createLegDto = new CreateLegDTO
                     {
                         SetId = setDto.Id,
                         LegNumber = legNumber

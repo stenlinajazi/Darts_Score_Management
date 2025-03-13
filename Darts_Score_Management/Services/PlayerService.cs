@@ -19,7 +19,7 @@ namespace Darts_Score_Management.Services
 
         public async Task<PlayerDTO> GetPlayerByIdAsync(int id)
         {
-            var player = await _playerRepository.GetByIdAsync(id);
+            Player player = await _playerRepository.GetByIdAsync(id);
             return _mapper.Map<PlayerDTO>(player);
         }
 
@@ -30,16 +30,16 @@ namespace Darts_Score_Management.Services
 
         public async Task<PlayerDTO> CreatePlayerAsync(UpsertPlayerDTO createPlayerDto)
         {
-            var player = _mapper.Map<Player>(createPlayerDto);
+            Player player = _mapper.Map<Player>(createPlayerDto);
             player.IsActive = true;
          
-            var createdPlayer = await _playerRepository.AddAsync(player);
+            Player createdPlayer = await _playerRepository.AddAsync(player);
             return _mapper.Map<PlayerDTO>(createdPlayer);
         }
 
         public async Task<PlayerDTO> UpdatePlayerAsync(int id, UpsertPlayerDTO upsertplayerDto)
         {
-            var player = await _playerRepository.GetByIdAsync(id);
+            Player player = await _playerRepository.GetByIdAsync(id);
             if (player == null)
             {
                 throw new KeyNotFoundException($"Player with id {id} not found");
@@ -57,7 +57,7 @@ namespace Darts_Score_Management.Services
 
         public async Task<IEnumerable<PlayerDTO>> GetActivePlayersAsync()
         {
-            var players = await _playerRepository.GetActivePlayersAsync();
+            IEnumerable<Player> players = await _playerRepository.GetActivePlayersAsync();
             return _mapper.Map<IEnumerable<PlayerDTO>>(players);
         }
 
