@@ -11,6 +11,5 @@ namespace Darts_Score_Management.DTOs.GamePlayer
         public int TurnOrder { get; set; }
         public bool IsWinner { get; set; }
         public int FinalRanking { get; set; }
-        public List<StatisticDTO> Statistics { get; set; }
     }
 }

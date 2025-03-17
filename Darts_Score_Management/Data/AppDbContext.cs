@@ -16,7 +16,6 @@ namespace Darts_Score_Management.Data
         public DbSet<Leg> Legs { get; set; }
         public DbSet<Turn> Turns { get; set; }
         public DbSet<Throw> Throws { get; set; }
-        public DbSet<Statistic> Statistics { get; set; }
         public DbSet<LegStats> LegStats { get; set; }
         public DbSet<SetStats> SetStats { get; set; }
         public DbSet<GameStats> GameStats { get; set; }
@@ -60,19 +59,15 @@ namespace Darts_Score_Management.Data
             modelBuilder.Entity<Game>(entity =>
             {
                 entity.HasKey(g => g.Id);
-                entity.Property(g => g.Id).ValueGeneratedOnAdd(); // Explicitly set as identity
+                entity.Property(g => g.Id).ValueGeneratedOnAdd(); 
                 entity.HasMany(g => g.GamePlayers)
                       .WithOne(gp => gp.Game)
                       .HasForeignKey(gp => gp.GameId)
-                      .OnDelete(DeleteBehavior.Cascade); // Cascade delete GamePlayers if Game is deleted
+                      .OnDelete(DeleteBehavior.Cascade); 
                 entity.HasMany(g => g.Sets)
                       .WithOne(s => s.Game)
                       .HasForeignKey(s => s.GameId)
                       .OnDelete(DeleteBehavior.Cascade);
-                entity.HasMany(g => g.GameStats)
-                      .WithOne(gs => gs.Game)
-                      .HasForeignKey(gs => gs.GameId)
-                      .OnDelete(DeleteBehavior.NoAction);
             });
 
             // Serialize GameSettings as JSON
@@ -84,22 +79,17 @@ namespace Darts_Score_Management.Data
                 );
 
             // GamePlayer configuration
-            modelBuilder.Entity<GamePlayer>()
-                .HasMany(gp => gp.Statistics)
-                .WithOne(s => s.GamePlayer)
-                .HasForeignKey(s => s.GamePlayerId)
-                .OnDelete(DeleteBehavior.Cascade);
-
+          
             modelBuilder.Entity<GamePlayer>()
                 .HasMany(gp => gp.LegStats)
                 .WithOne(ls => ls.GamePlayer)
                 .HasForeignKey(ls => ls.GamePlayerId)
-                .OnDelete(DeleteBehavior.Cascade); // Cascade from GamePlayer to LegStats
+                .OnDelete(DeleteBehavior.Cascade); 
             modelBuilder.Entity<GamePlayer>()
                 .HasMany(gp => gp.SetStats)
                 .WithOne(ss => ss.GamePlayer)
                 .HasForeignKey(ss => ss.GamePlayerId)
-                .OnDelete(DeleteBehavior.Cascade); // Cascade from GamePlayer to SetStats
+                .OnDelete(DeleteBehavior.Cascade);
             modelBuilder.Entity<GamePlayer>()
                 .HasMany(gp => gp.GameStats)
                 .WithOne(gs => gs.GamePlayer)
@@ -196,6 +186,40 @@ namespace Darts_Score_Management.Data
             modelBuilder.Entity<Throw>()
                 .HasIndex(t => new { t.TurnId, t.ThrowNumber })
                 .IsUnique();
+
+            modelBuilder.Entity<Turn>()
+                .HasIndex(t => t.LegId);
+          
+            modelBuilder.Entity<Leg>()
+                .HasIndex(l => l.SetId);
+
+            modelBuilder.Entity<Set>()
+                .HasIndex(s => s.GameId);
+
+            modelBuilder.Entity<LegStats>()
+                .HasIndex(ls => new { ls.GamePlayerId, ls.LegId });
+        
+            modelBuilder.Entity<SetStats>()
+                .HasIndex(ss => new { ss.GamePlayerId, ss.SetId });
+          
+            modelBuilder.Entity<GameStats>()
+                .HasIndex(gs => new { gs.GamePlayerId, gs.GameId });
+
+            modelBuilder.Entity<GamePlayer>()
+                .HasIndex(gp => gp.PlayerId);
+
+          
+
+            modelBuilder.Entity<LegStats>()
+                .HasIndex(ls => ls.LegId);  
+
+            modelBuilder.Entity<SetStats>()
+                .HasIndex(ss => ss.SetId);  
+
+            modelBuilder.Entity<Turn>()
+                .HasIndex(t => t.PlayerId);  
+
+
         }
 
     }

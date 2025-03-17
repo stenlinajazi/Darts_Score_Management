@@ -20,16 +20,16 @@ namespace Darts_Score_Management.Services
             return turn?.PlayerId == playerId;
         }
 
-        public async Task<bool> ValidateMaximumThrows(int turnId)
-        {
-            var turn = await _turnService.GetTurnByIdAsync(turnId);
-            return turn?.Throws.Count < MaxThrowsPerTurn;
-        }
+        //public async Task<bool> ValidateMaximumThrows(int turnId)
+        //{
+        //    var turn = await _turnService.GetTurnByIdAsync(turnId);
+        //    return turn?.Throws.Count < MaxThrowsPerTurn;
+        //}
 
-        public async Task<bool> ValidateGameInProgress(int gameId)
-        {
-            var game = await _gameService.GetGameByIdAsync(gameId);
-            return game != null && !game.IsComplete;
-        }
+        //public async Task<bool> ValidateGameInProgress(int gameId)
+        //{
+        //    var game = await _gameService.GetGameByIdAsync(gameId);
+        //    return game != null && !game.IsComplete;
+        //}
     }
 }

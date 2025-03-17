@@ -1,8 +1,12 @@
-﻿namespace Darts_Score_Management.DTOs.Set
+﻿using System.Text.Json.Serialization;
+
+namespace Darts_Score_Management.DTOs.Set
 {
     public class SetStatsDTO
     {
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
         public int Id { get; set; }
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
         public int GamePlayerId { get; set; }
         public int SetId { get; set; }
         public int LegsWin { get; set; }

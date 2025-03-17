@@ -1,7 +1,7 @@
 ﻿using Darts_Score_Management.Enums;
 using System.ComponentModel.DataAnnotations;
 
-namespace Darts_Score_Management.DTOs.Game
+namespace Darts_Score_Management.DTOs.Game.Core
 {
     public class CreateGameDTO
     {

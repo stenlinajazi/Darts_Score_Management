@@ -21,20 +21,20 @@ namespace Darts_Score_Management.Services
 
         public async Task<Leg> GetLegByIdAsync(int id)
         {
-            var leg = await _legRepository.GetLegWithDetailsAsync(id);
+            Leg leg = await _legRepository.GetLegWithDetailsAsync(id);
             return leg;
         }
 
         public async Task<LegDTO> CreateLegAsync(CreateLegDTO createLegDto)
         {
-            var leg = _mapper.Map<Leg>(createLegDto);
-            var createdLeg = await _legRepository.AddAsync(leg);
+            Leg leg = _mapper.Map<Leg>(createLegDto);
+            Leg createdLeg = await _legRepository.AddAsync(leg);
             return _mapper.Map<LegDTO>(createdLeg);
         }
 
         public async Task<LegDTO> EndLegAsync(int id, int winnerId)
         {
-            var leg = await _legRepository.GetByIdAsync(id);
+            Leg leg = await _legRepository.GetByIdAsync(id);
             if (leg == null)
                 throw new KeyNotFoundException($"Leg with id {id} not found");
 
@@ -45,24 +45,24 @@ namespace Darts_Score_Management.Services
 
         public async Task<IEnumerable<LegDTO>> GetLegsBySetIdAsync(int setId)
         {
-            var legs = await _legRepository.GetAllAsync();
-            var setLegs = legs.Where(l => l.SetId == setId);
+            IEnumerable<Leg> legs = await _legRepository.GetAllAsync();
+            IEnumerable<Leg> setLegs = legs.Where(l => l.SetId == setId);
             return _mapper.Map<IEnumerable<LegDTO>>(setLegs);
         }
 
         public async Task<LegDTO> UpdateLegAsync(Leg leg)
         {
             await _legRepository.UpdateAsync(leg);
-            var updatedLeg = await _legRepository.GetByIdAsync(leg.Id); 
+            Leg updatedLeg = await _legRepository.GetByIdAsync(leg.Id); 
             return _mapper.Map<LegDTO>(updatedLeg);
         }
 
         public async Task<List<GamePlayer>> GetGamePlayersForLegAsync(int legId)
         {
-            var gamePlayers = await _legRepository.GetGamePlayersForLegAsync(legId);
+            List<GamePlayer> gamePlayers = await _legRepository.GetGamePlayersForLegAsync(legId);
             if (gamePlayers == null || !gamePlayers.Any())
                 throw new KeyNotFoundException($"No game players found for Leg with ID {legId}.");
-            var leg = await _legRepository.GetLegWithDetailsAsync(legId);
+            Leg leg = await _legRepository.GetLegWithDetailsAsync(legId);
             if (leg == null)
                 throw new KeyNotFoundException($"Leg with ID {legId} not found.");
             if (leg.Set == null || leg.Set.Game == null)

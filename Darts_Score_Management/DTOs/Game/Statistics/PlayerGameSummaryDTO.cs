@@ -1,6 +1,6 @@
 ﻿using Darts_Score_Management.Enums;
 
-namespace Darts_Score_Management.DTOs.Game
+namespace Darts_Score_Management.DTOs.Game.Statistics
 {
     public class PlayerGameSummaryDTO
     {
@@ -10,11 +10,11 @@ namespace Darts_Score_Management.DTOs.Game
         public DateTime StartedAt { get; set; }
         public DateTime? EndedAt { get; set; }
         public bool IsComplete { get; set; }
-        public int PlayerCount { get; set; } 
-        public int SetsCount { get; set; }   
-        public bool WasWinner { get; set; }  
+        public int PlayerCount { get; set; }
+        public int SetsCount { get; set; }
+        public bool WasWinner { get; set; }
         public int FinalRanking { get; set; }
-        public int SetsWon { get; set; }    
-        public int LegsWon { get; set; }     
+        public int SetsWon { get; set; }
+        public int LegsWon { get; set; }
     }
 }

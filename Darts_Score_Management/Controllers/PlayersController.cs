@@ -43,20 +43,20 @@ namespace Darts_Score_Management.Controllers
             return Ok(player);
         }
 
-        [HttpGet("{id}/stats")]
-        [ApiExplorerSettings(IgnoreApi = true)]
-        public async Task<ActionResult<PlayerStatsDTO>> GetPlayerWithStats(int id)
-        {
-            try
-            {
-                var player = await _playerService.GetPlayerWithStatsAsync(id);
-                return Ok(player);
-            }
-            catch (KeyNotFoundException)
-            {
-                return NotFound();
-            }
-        }
+        //[HttpGet("{id}/stats")]
+        //[ApiExplorerSettings(IgnoreApi = true)]
+        //public async Task<ActionResult<PlayerStatsDTO>> GetPlayerWithStats(int id)
+        //{
+        //    try
+        //    {
+        //        var player = await _playerService.GetPlayerWithStatsAsync(id);
+        //        return Ok(player);
+        //    }
+        //    catch (KeyNotFoundException)
+        //    {
+        //        return NotFound();
+        //    }
+        //}
 
 
         [HttpPost]

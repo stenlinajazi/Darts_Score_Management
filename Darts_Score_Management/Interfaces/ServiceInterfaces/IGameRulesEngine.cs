@@ -1,5 +1,5 @@
 ﻿using Darts_Score_Management.Data.Models;
-using Darts_Score_Management.DTOs.Game;
+using Darts_Score_Management.DTOs.Game.State;
 using Darts_Score_Management.DTOs.Throw;
 
 namespace Darts_Score_Management.Interfaces.ServiceInterfaces

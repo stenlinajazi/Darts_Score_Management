@@ -25,10 +25,10 @@ namespace Darts_Score_Management.Repositories
         public async Task<IEnumerable<LegStats>> GetLast10LegsForPlayerAsync(int playerId)
         {
             return await _context.LegStats
-                .Include(ls => ls.Leg) // Eager load Leg for WinnerPlayerId
-                .Include(ls => ls.GamePlayer) // Eager load GamePlayer to access PlayerId
-                .Where(ls => ls.GamePlayer.PlayerId == playerId) // Filter by PlayerId
-                .OrderByDescending(ls => ls.Leg.Id) // Sort by Leg.Id 
+                .Include(ls => ls.Leg) 
+                .Include(ls => ls.GamePlayer) 
+                .Where(ls => ls.GamePlayer.PlayerId == playerId) 
+                .OrderByDescending(ls => ls.Leg.Id) 
                 .Take(10)
                 .ToListAsync();
         }
@@ -40,14 +40,6 @@ namespace Darts_Score_Management.Repositories
                 .Where(ls => ls.Leg.Set.GameId == gameId)
                 .ToListAsync();
         }
-
-        //public async Task<IEnumerable<LegStats>> GetLegsForSetAsync(int setId)
-        //{
-        //    return await _context.LegStats
-        //        .Include(ls => ls.Leg)
-        //        .Where(ls => ls.Leg.SetId == setId)
-        //        .ToListAsync();
-        //}
 
         public async Task<IEnumerable<LegStats>> GetLegStatsForPlayerInSetAsync(int setId, int gamePlayerId, int playerId)
         {

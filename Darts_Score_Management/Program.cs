@@ -19,7 +19,6 @@ builder.Services.AddDbContext<AppDbContext>((options) =>
 builder.Services.AddScoped<IPlayerRepository, PlayerRepository>();
 builder.Services.AddScoped<IGameRepository, GameRepository>();
 builder.Services.AddScoped<IGamePlayerRepository, GamePlayerRepository>();
-builder.Services.AddScoped<IStatisticRepository, StatisticRepository>();
 builder.Services.AddScoped<ISetRepository, SetRepository>();
 builder.Services.AddScoped<ILegRepository, LegRepository>();
 builder.Services.AddScoped<ITurnRepository, TurnRepository>();

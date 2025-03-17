@@ -1,4 +1,6 @@
-﻿using Darts_Score_Management.DTOs.Game;
+﻿using Darts_Score_Management.DTOs.Game.Core;
+using Darts_Score_Management.DTOs.Game.Response;
+using Darts_Score_Management.DTOs.Game.Statistics;
 using Darts_Score_Management.Interfaces.ServiceInterfaces;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -17,16 +19,16 @@ namespace Darts_Score_Management.Controllers
         }
         
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<GameDTO>>> GetGames()
+        public async Task<ActionResult<IEnumerable<GameListResponseDTO>>> GetGames()
         {
-            var games = await _gameService.GetAllGameSummariesAsync();
+            var games = await _gameService.GetAllSummariesAsync();
             return Ok(games);
         }
 
         [HttpGet("{id}")]
-        public async Task<ActionResult<GameDTO>> GetGame(int id)
+        public async Task<ActionResult<GameDetailsResponseDTO>> GetGame(int id)
         {
-            var game = await _gameService.GetGameByIdAsync(id);
+            var game = await _gameService.GetGameWithDetailsAndHistoryAsync(id);
             if (game == null)
             {
                 return NotFound();
@@ -48,35 +50,35 @@ namespace Darts_Score_Management.Controllers
             return CreatedAtAction(nameof(GetGame), new { id = game.Id }, game);
         }
      
-        [HttpPut("{id}")]
-        [ApiExplorerSettings(IgnoreApi = true)]
-        public async Task<ActionResult<GameDTO>> UpdateGame(int id, GameDTO gameDto)
-        {
-            try
-            {
-                var game = await _gameService.UpdateGameAsync(id, gameDto);
-                return Ok(game);
-            }
-            catch (KeyNotFoundException)
-            {
-                return NotFound();
-            }
-        }
+        //[HttpPut("{id}")]
+        //[ApiExplorerSettings(IgnoreApi = true)]
+        //public async Task<ActionResult<GameDTO>> UpdateGame(int id, GameDTO gameDto)
+        //{
+        //    try
+        //    {
+        //        var game = await _gameService.UpdateGameAsync(id, gameDto);
+        //        return Ok(game);
+        //    }
+        //    catch (KeyNotFoundException)
+        //    {
+        //        return NotFound();
+        //    }
+        //}
 
-        [HttpPost("{id}/end")]
-        [ApiExplorerSettings(IgnoreApi = true)]
-        public async Task<ActionResult<GameDTO>> EndGame(int id, [FromBody] int winnerId)
-        {
-            try
-            {
-                var game = await _gameService.EndGameAsync(id, winnerId);
-                return Ok(game);
-            }
-            catch (KeyNotFoundException)
-            {
-                return NotFound();
-            }
-        }
+        //[HttpPost("{id}/end")]
+        //[ApiExplorerSettings(IgnoreApi = true)]
+        //public async Task<ActionResult<GameDTO>> EndGame(int id, [FromBody] int winnerId)
+        //{
+        //    try
+        //    {
+        //        var game = await _gameService.EndGameAsync(id, winnerId);
+        //        return Ok(game);
+        //    }
+        //    catch (KeyNotFoundException)
+        //    {
+        //        return NotFound();
+        //    }
+        //}
 
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteGame(int id)

@@ -8,15 +8,14 @@ namespace Darts_Score_Management.Data.Models
     {
         public int Id { get; set; }
         public GameType Type { get; set; } // Enum: X01 (301, 501, etc.), Cricket, etc.
-        public int StartingScore { get; set; } // 501, 301, etc. for X01 games
+        public int StartingScore { get; set; } 
         public DateTime StartedAt { get; set; }
         public DateTime? EndedAt { get; set; }
         public bool IsComplete { get; set; }
-        public GameSettings Settings { get; set; } // JSON serialized or separate table
+        public GameSettings Settings { get; set; } // JSON serialized 
 
         // Navigation properties
         public List<GamePlayer> GamePlayers { get; set; }
         public List<Set> Sets { get; set; }
-        public List<GameStats> GameStats { get; set; }
     }
 }

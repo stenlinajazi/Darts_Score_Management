@@ -2,11 +2,6 @@
 {
     public enum StatisticType
     {
-        //AveragePerTurn = 1,
-        //CheckoutPercentage = 2,
-        //HighestScore = 3,
-        //NumberOfT20 = 4,
-
         PPD,                // Points Per Dart
         First9PPD,          // First 9 darts PPD
         CheckoutPercentage, // Checkout success rate (already exists, but included for clarity)
