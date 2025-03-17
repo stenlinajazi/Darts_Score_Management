@@ -1,6 +1,6 @@
 ﻿using System.Text.Json.Serialization;
 
-namespace Darts_Score_Management.DTOs.Game
+namespace Darts_Score_Management.DTOs.Game.Statistics
 {
     public class GameStatsDTO
     {

@@ -1,4 +1,4 @@
-﻿namespace Darts_Score_Management.DTOs.Game
+﻿namespace Darts_Score_Management.DTOs.Game.Players
 {
     public class GamePlayerInfoDTO
     {

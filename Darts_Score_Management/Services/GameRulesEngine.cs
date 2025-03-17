@@ -2,7 +2,8 @@
 using Darts_Score_Management.CustomExceptions;
 using Darts_Score_Management.Data;
 using Darts_Score_Management.Data.Models;
-using Darts_Score_Management.DTOs.Game;
+using Darts_Score_Management.DTOs.Game.Core;
+using Darts_Score_Management.DTOs.Game.State;
 using Darts_Score_Management.DTOs.Leg;
 using Darts_Score_Management.DTOs.Set;
 using Darts_Score_Management.DTOs.Statistic;

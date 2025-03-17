@@ -1,4 +1,6 @@
-﻿using Darts_Score_Management.DTOs.Game;
+﻿using Darts_Score_Management.DTOs.Game.Core;
+using Darts_Score_Management.DTOs.Game.Response;
+using Darts_Score_Management.DTOs.Game.Statistics;
 using Darts_Score_Management.Interfaces.ServiceInterfaces;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;

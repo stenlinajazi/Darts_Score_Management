@@ -1,5 +1,5 @@
 ﻿using Darts_Score_Management.Data.Models;
-using Darts_Score_Management.DTOs.Game;
+using Darts_Score_Management.DTOs.Game.Statistics;
 using Darts_Score_Management.DTOs.Leg;
 using Darts_Score_Management.DTOs.Player;
 using Darts_Score_Management.DTOs.Set;

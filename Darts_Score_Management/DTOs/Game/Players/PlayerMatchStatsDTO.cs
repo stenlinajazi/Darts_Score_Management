@@ -1,7 +1,8 @@
-﻿using Darts_Score_Management.DTOs.Leg;
+﻿using Darts_Score_Management.DTOs.Game.Statistics;
+using Darts_Score_Management.DTOs.Leg;
 using Darts_Score_Management.DTOs.Set;
 
-namespace Darts_Score_Management.DTOs.Game
+namespace Darts_Score_Management.DTOs.Game.Players
 {
     public class PlayerMatchStatsDTO
     {
