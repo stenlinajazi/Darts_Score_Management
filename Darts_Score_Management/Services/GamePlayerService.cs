@@ -10,16 +10,13 @@ namespace Darts_Score_Management.Services
     public class GamePlayerService : IGamePlayerService
     {
         private readonly IGamePlayerRepository _gamePlayerRepository;
-        private readonly IStatisticRepository _statisticRepository;
         private readonly IMapper _mapper;
 
         public GamePlayerService(
             IGamePlayerRepository gamePlayerRepository,
-            IStatisticRepository statisticRepository,
             IMapper mapper)
         {
             _gamePlayerRepository = gamePlayerRepository;
-            _statisticRepository = statisticRepository;
             _mapper = mapper;
         }
 

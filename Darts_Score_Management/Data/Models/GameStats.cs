@@ -20,6 +20,6 @@ namespace Darts_Score_Management.Data.Models
 
         // Navigation properties
         public GamePlayer GamePlayer { get; set; }
-        public Game Game { get; set; }
+       // public Game Game { get; set; }
     }
 }

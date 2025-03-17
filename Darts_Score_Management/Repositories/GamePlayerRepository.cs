@@ -13,7 +13,6 @@ namespace Darts_Score_Management.Repositories
         {
             return await _context.GamePlayers
                 .Include(gp => gp.Player)
-                .Include(gp => gp.Statistics)
                 .Where(gp => gp.GameId == gameId)
                 .OrderBy(gp => gp.TurnOrder)
                 .ToListAsync();
@@ -23,7 +22,6 @@ namespace Darts_Score_Management.Repositories
         {
             return await _context.GamePlayers
                 .Include(gp => gp.Player)
-                .Include(gp => gp.Statistics)
                 .FirstOrDefaultAsync(gp => gp.Id == gamePlayerId);
         }
     }

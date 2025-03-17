@@ -41,10 +41,6 @@ namespace Darts_Score_Management.Profiles
             CreateMap<GamePlayerDTO, GamePlayer>();
             CreateMap<GamePlayer, GameStatisticsDTO>();
 
-            // Statistic mappings
-            CreateMap<Statistic, StatisticDTO>().ReverseMap();
-            CreateMap<Statistic, StatisticDTO>();
-
             // Set mappings
             CreateMap<Set, SetDTO>().ReverseMap();
             CreateMap<CreateSetDTO, Set>()
