@@ -1,0 +1,251 @@
+body {
+  font-family: Arial, sans-serif;
+  margin: 0;
+  padding: 20px;
+  background-color: #f5f5f5;
+}
+
+.container {
+  max-width: 800px;
+  margin: 0 auto;
+  background: #fff;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+h1 {
+  text-align: center;
+  color: #333;
+}
+
+.game-info {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 20px;
+  align-items: center;
+}
+
+input[type="number"] {
+  padding: 5px;
+  width: 80px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+
+.players-container {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+
+.player-card {
+  background-color: #fff;
+  padding: 15px;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  flex: 1;
+  min-width: 200px;
+  transition: background-color 0.3s ease;
+}
+
+.player-card.active {
+  background-color: #e3f2fd;
+  border: 2px solid #2196f3;
+}
+
+.player-name {
+  font-size: 18px;
+  font-weight: bold;
+  margin-bottom: 10px;
+}
+
+.player-score {
+  font-size: 16px;
+  color: #2a6496;
+}
+
+.throws-container {
+  margin-bottom: 20px;
+}
+
+.throw-row {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 10px;
+  background-color: #f9f9f9;
+  padding: 8px;
+  border-radius: 4px;
+}
+
+.throw-info {
+  display: flex;
+  gap: 10px;
+}
+
+.throw-value {
+  font-weight: bold;
+}
+
+.throw-points {
+  color: #28a745;
+  font-weight: bold;
+}
+
+.score-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.segment-btn {
+  padding: 10px;
+  font-size: 16px;
+  border: none;
+  background-color: #e9ecef;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.segment-btn:hover {
+  background-color: #dee2e6;
+}
+
+.segment-btn.selected {
+  background-color: #4a90e2;
+  color: white;
+}
+
+.multiplier-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.multiplier-btn {
+  padding: 10px;
+  font-size: 16px;
+  border: none;
+  background-color: #e9ecef;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.multiplier-btn:hover {
+  background-color: #dee2e6;
+}
+
+.multiplier-btn.selected {
+  background-color: #4a90e2;
+  color: white;
+}
+
+.actions {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.btn-primary {
+  padding: 10px 20px;
+  background-color: #007bff;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.btn-primary:hover {
+  background-color: #0069d9;
+}
+
+.btn-primary:disabled {
+  background-color: #6c757d;
+  cursor: not-allowed;
+}
+
+.btn-secondary {
+  padding: 10px 20px;
+  background-color: #6c757d;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.btn-secondary:hover {
+  background-color: #5a6268;
+}
+
+.message {
+  padding: 12px;
+  margin: 10px 0;
+  border-radius: 4px;
+  text-align: center;
+  font-weight: bold;
+  font-size: 16px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.message.error {
+  background-color: #f8d7da;
+  color: #721c24;
+}
+
+.message.success {
+  background-color: #d4edda;
+  color: #155724;
+}
+
+.modal {
+  display: none;
+  position: fixed;
+  z-index: 1;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  overflow: auto;
+  background-color: rgba(0, 0, 0, 0.4);
+}
+
+.modal-content {
+  background-color: #fff;
+  margin: 15% auto;
+  padding: 20px;
+  border: 1px solid #888;
+  width: 80%;
+  max-width: 400px;
+  border-radius: 8px;
+  text-align: center;
+}
+
+.modal-close {
+  color: #aaa;
+  float: right;
+  font-size: 28px;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.modal-close:hover,
+.modal-close:focus {
+  color: #000;
+  text-decoration: none;
+}
+
+#modal-title {
+  margin-bottom: 15px;
+}
+
+#modal-message {
+  margin-bottom: 20px;
+}
+
+#message-container {
+  margin: 15px 0;
+  min-height: 40px;
+}
