@@ -1,4 +1,4 @@
-﻿using Darts_Score_Management.ValidationAttributes;
+﻿//using Darts_Score_Management.ValidationAttributes;
 using System.ComponentModel.DataAnnotations;
 
 namespace Darts_Score_Management.DTOs.Throw
@@ -16,7 +16,7 @@ namespace Darts_Score_Management.DTOs.Throw
 
         [Required]
         //  [Range(1, 3)]
-        [ValidMultiplier]
+      //  [ValidMultiplier]
         public int Multiplier { get; set; }
     }
 }
