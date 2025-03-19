@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using Darts_Score_Management.CustomExceptions;
 using Darts_Score_Management.Data.Models;
 using Darts_Score_Management.DTOs.Game.Core;
 using Darts_Score_Management.DTOs.Game.Response;
@@ -186,6 +187,14 @@ namespace Darts_Score_Management.Services
             }
         }
 
-       
+
+        public async Task<int> GetActiveLegIdAsync()
+        {
+            var legId = await _gameRepository.GetActiveLegIdForMostRecentGameAsync();
+            if (legId == null)
+                throw new InvalidOperationException("No active leg found. Please create a new game or complete existing sets/legs.");
+            return legId.Value;
+        }
+
     }
 }
