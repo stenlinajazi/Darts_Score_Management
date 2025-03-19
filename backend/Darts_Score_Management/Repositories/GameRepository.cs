@@ -286,10 +286,10 @@ namespace Darts_Score_Management.Repositories
                 .OrderByDescending(g => g.StartedAt)
                 .SelectMany(g => g.Sets)
                 .Where(s => !s.WinnerPlayerId.HasValue)
-                .OrderBy(s => s.SetNumber) // Changed to OrderBy for earliest set
+                .OrderBy(s => s.SetNumber) 
                 .SelectMany(s => s.Legs)
                 .Where(l => !l.WinnerPlayerId.HasValue)
-                .OrderBy(l => l.LegNumber) // Changed to OrderBy for earliest leg
+                .OrderBy(l => l.LegNumber) 
                 .Select(l => l.Id)
                 .FirstOrDefaultAsync();
             return activeLeg != 0 ? activeLeg : null;

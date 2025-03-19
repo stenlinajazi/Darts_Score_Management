@@ -323,6 +323,13 @@ namespace Darts_Score_Management.Services
             Dictionary<int, int> legsWonPerPlayer = players.ToDictionary(p => p, p => set.Legs.Count(l => l.WinnerPlayerId == p));
             bool isTie = players.Count > 1 && players.All(p => legsWonPerPlayer[p] == legsWonPerPlayer[players[0]]);
 
+            if (totalLegs < game.Settings.LegsPerSet && !isTie)
+            {
+                // Create the next leg in the current set
+                await _gameService.CreateNextLegAsync(set.Id);
+                return;
+            }
+
             if (legsWon >= game.Settings.LegsPerSet)
             {
                 // Update set-level statistics before ending the set
@@ -332,8 +339,7 @@ namespace Darts_Score_Management.Services
             }
             else if (isTie && totalLegs == game.Settings.LegsPerSet)
             {
-               
-                await CreateTiebreakerLeg(set.Id, game.Settings.LegsPerSet);
+                await _gameService.CreateNextLegAsync(set.Id);
             }
         }
 
@@ -347,6 +353,12 @@ namespace Darts_Score_Management.Services
             Dictionary<int, int> setsPerPlayer = players.ToDictionary(p => p, p => game.Sets.Count(s => s.WinnerPlayerId == p));
             bool isTie = players.Count > 1 && players.All(p => setsPerPlayer[p] == setsPerPlayer[players[0]]);
 
+            if (totalSets < game.Settings.SetsToWin && !isTie)
+            {
+                await _gameService.CreateNextSetAsync(game.Id);
+                return;
+            }
+
             if (setsWon >= game.Settings.SetsToWin)
             {
                 // Update game-level statistics before ending the game
@@ -356,52 +368,8 @@ namespace Darts_Score_Management.Services
             }
             else if (isTie && totalSets == game.Settings.SetsToWin)
             {
-               
-                await CreateTiebreakerSet(game.Id, game.Settings.SetsToWin);
+                await _gameService.CreateNextSetAsync(game.Id);
             }   
-        }
-
-        private async Task CreateTiebreakerLeg(int setId, int legsPerSet)
-        {
-            SetDTO set = await _setService.GetSetByIdAsync(setId);
-            int totalLegs = set.Legs.Count;
-            int newLegNumber = totalLegs + 1;
-
-            var createLegDto = new CreateLegDTO
-            {
-                SetId = setId,
-                LegNumber = newLegNumber
-            };
-
-            await _legService.CreateLegAsync(createLegDto);
-        }
-
-        private async Task CreateTiebreakerSet(int gameId, int setsToWin)
-        {
-            GameDTO game = await _gameService.GetGameByIdAsync(gameId);
-            int totalSets = game.Sets.Count;
-            int newSetNumber = totalSets + 1;
-
-            CreateSetDTO createSetDto = new CreateSetDTO
-            {
-                GameId = gameId,
-                SetNumber = newSetNumber
-            };
-
-            SetDTO setDto = await _setService.CreateSetAsync(createSetDto);
-
-            // Create initial legs for the new set based on LegsPerSet
-            int initialLegs = game.Settings.LegsPerSet;
-            for (int legNumber = 1; legNumber <= initialLegs; legNumber++)
-            {
-                CreateLegDTO createLegDto = new CreateLegDTO
-                {
-                    SetId = setDto.Id,
-                    LegNumber = legNumber
-                };
-
-                await _legService.CreateLegAsync(createLegDto);
-            }
         }
         private bool IsValidDartSegment(int segment, int multiplier)
         {

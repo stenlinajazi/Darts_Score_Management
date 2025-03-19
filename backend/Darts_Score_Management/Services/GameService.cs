@@ -90,21 +90,10 @@ namespace Darts_Score_Management.Services
             }).ToList();
 
             Game createdGame = await _gameRepository.CreateGameWithPlayersAsync(game, gamePlayers);
-            // Automatically create sets and legs for a best-of game
-            await CreateSetsAndLegsForGame(createdGame, createGameDto.Settings.SetsToWin, createGameDto.Settings.LegsPerSet);
+            SetDTO firstSet = await CreateNextSetAsync(createdGame.Id);
+            //await CreateNextLegAsync(firstSet.Id);
             return await GetGameByIdAsync(createdGame.Id);
         }
-
-        //public async Task<GameDTO> UpdateGameAsync(int id, GameDTO gameDto)
-        //{
-        //    var game = await _gameRepository.GetByIdAsync(id);
-        //    if (game == null)
-        //        throw new KeyNotFoundException($"Game with id {id} not found");
-
-        //    _mapper.Map(gameDto, game);
-        //    await _gameRepository.UpdateAsync(game);
-        //    return _mapper.Map<GameDTO>(game);
-        //}
 
         public async Task DeleteGameAsync(int id)
         {
@@ -161,30 +150,36 @@ namespace Darts_Score_Management.Services
             return _mapper.Map<GameDTO>(game);
         }
 
-        private async Task CreateSetsAndLegsForGame(Game game, int setsToWin, int legsPerSet)
+        public async Task<SetDTO> CreateNextSetAsync(int gameId)
         {
-            
-            for (int setNumber = 1; setNumber <= setsToWin; setNumber++)
+            GameDTO game = await GetGameByIdAsync(gameId);
+            if (game == null)
+                throw new KeyNotFoundException($"Game with ID {gameId} not found");
+
+            int nextSetNumber = game.Sets.Count + 1;
+            CreateSetDTO createSetDto = new CreateSetDTO
             {
-                CreateSetDTO createSetDto = new CreateSetDTO
-                {
-                    GameId = game.Id,
-                    SetNumber = setNumber
-                };
+                GameId = gameId,
+                SetNumber = nextSetNumber
+            };
+            SetDTO setDto = await _setService.CreateSetAsync(createSetDto);
+            await CreateNextLegAsync(setDto.Id);
+            return setDto;
+        }
 
-                SetDTO setDto = await _setService.CreateSetAsync(createSetDto);
+        public async Task<LegDTO> CreateNextLegAsync(int setId)
+        {
+            SetDTO set = await _setService.GetSetByIdAsync(setId);
+            if (set == null)
+                throw new KeyNotFoundException($"Set with ID {setId} not found");
 
-                for (int legNumber = 1; legNumber <= legsPerSet; legNumber++)
-                {
-                    CreateLegDTO createLegDto = new CreateLegDTO
-                    {
-                        SetId = setDto.Id,
-                        LegNumber = legNumber
-                    };
-
-                    await _legService.CreateLegAsync(createLegDto);
-                }
-            }
+            int nextLegNumber = set.Legs.Count + 1;
+            CreateLegDTO createLegDto = new CreateLegDTO
+            {
+                SetId = set.Id,
+                LegNumber = nextLegNumber
+            };
+            return await _legService.CreateLegAsync(createLegDto);
         }
 
 
