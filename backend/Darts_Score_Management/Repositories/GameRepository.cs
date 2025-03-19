@@ -283,7 +283,8 @@ namespace Darts_Score_Management.Repositories
         {
             var activeLeg = await _context.Games
                 .Where(g => !g.IsComplete)
-                .OrderByDescending(g => g.StartedAt)
+                .OrderByDescending(g => g.Id)
+                .Take(1)
                 .SelectMany(g => g.Sets)
                 .Where(s => !s.WinnerPlayerId.HasValue)
                 .OrderBy(s => s.SetNumber) 

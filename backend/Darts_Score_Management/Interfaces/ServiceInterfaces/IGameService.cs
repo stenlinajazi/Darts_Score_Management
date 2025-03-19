@@ -21,5 +21,6 @@ namespace Darts_Score_Management.Interfaces.ServiceInterfaces
         Task<SetDTO> CreateNextSetAsync(int gameId);
         Task<LegDTO> CreateNextLegAsync(int setId);
         Task<int> GetActiveLegIdAsync();
+        Task<int> GetActiveLegIdByGameIdAsync(int gameId);
     }
 }

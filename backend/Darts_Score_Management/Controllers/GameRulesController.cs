@@ -23,12 +23,20 @@ namespace Darts_Score_Management.Controllers
         }
 
         [HttpPost("throws")]
-        public async Task<ActionResult<GameStateDTO>> ProcessTurn([FromBody] List<CreateThrowDTO> throws)
+        public async Task<ActionResult<GameStateDTO>> ProcessTurn([FromBody] List<CreateThrowDTO> throws, [FromQuery] int? gameId = null)
         {
             if (throws == null || throws.Count > 3)
                 throw new GameRuleViolationException("A turn must contain 0 to 3 throws", "ThrowCount");
 
-            int legId = await _gameService.GetActiveLegIdAsync();
+            int legId;
+            if (gameId.HasValue)
+            {
+                legId = await _gameService.GetActiveLegIdByGameIdAsync(gameId.Value);
+            }
+            else
+            {
+                legId = await _gameService.GetActiveLegIdAsync();
+            }
 
             var gameState = await _gameRulesEngine.ProcessTurnForLeg(legId, throws);
             return Ok(gameState);

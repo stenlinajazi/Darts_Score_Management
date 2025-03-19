@@ -191,5 +191,28 @@ namespace Darts_Score_Management.Services
             return legId.Value;
         }
 
+        public async Task<int> GetActiveLegIdByGameIdAsync(int gameId)
+        {
+            var game = await GetGameByIdAsync(gameId);
+            if (game == null)
+                throw new KeyNotFoundException($"Game with ID {gameId} not found");
+
+            if (game.IsComplete)
+                throw new InvalidOperationException($"Game with ID {gameId} is already complete.");
+
+            var activeLeg = game.Sets
+                .Where(s => !s.WinnerPlayerId.HasValue)
+                .OrderBy(s => s.SetNumber)
+                .SelectMany(s => s.Legs)
+                .Where(l => !l.WinnerPlayerId.HasValue)
+                .OrderBy(l => l.LegNumber)
+                .FirstOrDefault();
+
+            if (activeLeg == null)
+                throw new InvalidOperationException($"No active leg found in game with ID {gameId}.");
+
+            return activeLeg.Id;
+        }
+
     }
 }
