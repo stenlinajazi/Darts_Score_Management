@@ -11,7 +11,6 @@ const MULTIPLIERS = {
 
 const uiState = {
   gameId: null,
-  legId: null,
   startingScore: null,
   players: [],
   activePlayerIndex: 0,
@@ -21,34 +20,42 @@ const uiState = {
   apiBaseUrl: "https://localhost:7134/api",
 };
 
-const gameIdInput = document.getElementById("game-id");
-const legIdInput = document.getElementById("leg-id");
-const loadGameBtn = document.getElementById("load-game-btn");
+const createGameBtn = document.getElementById("create-game-btn");
 const playersContainer = document.getElementById("players-container");
 const throwsList = document.getElementById("throws-list");
 const submitTurnBtn = document.getElementById("submit-turn-btn");
 const clearBtn = document.getElementById("clear-btn");
+const backBtn = document.getElementById("back-btn");
 const segmentButtons = document.querySelectorAll(".segment-btn");
 const multiplierButtons = document.querySelectorAll(".multiplier-btn");
 const messageContainer = document.getElementById("message-container");
-const modal = document.getElementById("winner-modal");
+const winnerModal = document.getElementById("winner-modal");
 const modalTitle = document.getElementById("modal-title");
 const modalMessage = document.getElementById("modal-message");
 const modalClose = document.getElementById("modal-close");
 const modalOk = document.getElementById("modal-ok");
 
+const createGameModal = document.getElementById("create-game-modal");
+const createModalClose = document.getElementById("create-modal-close");
+const createGameSubmit = document.getElementById("create-game-submit");
+const playerIdsInput = document.getElementById("player-ids");
+const startingScoreSelect = document.getElementById("starting-score");
+const setsToWinInput = document.getElementById("sets-to-win");
+const legsPerSetInput = document.getElementById("legs-per-set");
+const mustFinishOnDoubleCheckbox = document.getElementById(
+  "must-finish-on-double"
+);
+
 function init() {
-  uiState.legId = parseInt(legIdInput.value);
-
-  legIdInput.addEventListener("change", () => {
-    uiState.legId = parseInt(legIdInput.value);
-    resetTurn();
+  createGameBtn.addEventListener("click", () => {
+    createGameModal.style.display = "block";
   });
 
-  loadGameBtn.addEventListener("click", () => {
-    uiState.gameId = parseInt(gameIdInput.value);
-    fetchGameData();
+  createModalClose.addEventListener("click", () => {
+    createGameModal.style.display = "none";
   });
+
+  createGameSubmit.addEventListener("click", createGame);
 
   segmentButtons.forEach((button) => {
     button.addEventListener("click", () => {
@@ -66,43 +73,67 @@ function init() {
 
   submitTurnBtn.addEventListener("click", submitTurn);
   clearBtn.addEventListener("click", resetTurn);
+  backBtn.addEventListener("click", removeLastThrow);
 
   modalClose.addEventListener("click", closeModal);
   modalOk.addEventListener("click", closeModal);
 }
 
-async function fetchGameData() {
-  if (!uiState.gameId) {
-    showMessage("Please enter a Game ID", "error");
+async function createGame() {
+  const playerIds = playerIdsInput.value
+    .split(",")
+    .map((id) => parseInt(id.trim()))
+    .filter((id) => !isNaN(id));
+  const startingScore = parseInt(startingScoreSelect.value);
+  const setsToWin = parseInt(setsToWinInput.value);
+  const legsPerSet = parseInt(legsPerSetInput.value);
+  const mustFinishOnDouble = mustFinishOnDoubleCheckbox.checked;
+
+  if (playerIds.length === 0) {
+    showMessage("Please enter at least one player ID", "error");
     return;
   }
 
-  try {
-    const response = await fetch(
-      `${uiState.apiBaseUrl}/Games/${uiState.gameId}`,
-      {
-        method: "GET",
-        headers: { "Content-Type": "application/json" },
-      }
-    );
+  const createGameData = {
+    type: 1,
+    playerIds: playerIds,
+    startingScore: startingScore,
+    settings: {
+      setsToWin: setsToWin,
+      legsPerSet: legsPerSet,
+      mustFinishOnDouble: mustFinishOnDouble,
+    },
+  };
 
-    if (!response.ok) throw new Error("Failed to fetch game data");
+  try {
+    const response = await fetch(`${uiState.apiBaseUrl}/Games`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(createGameData),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || "Failed to create game");
+    }
 
     const data = await response.json();
+    uiState.gameId = data.id;
     uiState.startingScore = data.startingScore;
     uiState.players = data.players.map((player) => ({
-      id: player.playerId,
-      name: player.playerName,
+      id: player.player.id,
+      name: player.player.name,
       startingScore: data.startingScore,
       pointsThisTurn: 0,
       remainingScore: data.startingScore,
     }));
     uiState.activePlayerIndex = 0;
+
     renderPlayers();
-    showMessage("Game loaded successfully", "success");
+    showMessage("Game created successfully", "success");
+    createGameModal.style.display = "none";
   } catch (error) {
     showMessage(`Error: ${error.message}`, "error");
-    playersContainer.innerHTML = "";
   }
 }
 
@@ -132,7 +163,7 @@ function selectSegment(segment) {
     );
   });
 
-  if (segment === SEGMENTS.MISS) {
+  if (uiState.selectedMultiplier === null) {
     selectMultiplier(MULTIPLIERS.SINGLE);
   }
 
@@ -249,17 +280,28 @@ function resetTurn() {
   clearMessage();
 }
 
+function removeLastThrow() {
+  if (uiState.currentThrows.length === 0) {
+    showMessage("No throws to remove", "error");
+    return;
+  }
+
+  uiState.currentThrows.pop();
+  renderThrows();
+  submitTurnBtn.disabled = uiState.currentThrows.length === 0;
+}
+
 function submitTurn() {
   if (uiState.currentThrows.length === 0) {
     showMessage("Add at least one throw", "error");
     return;
   }
   if (!uiState.players.length) {
-    showMessage("Load a game first", "error");
+    showMessage("Create a game first", "error");
     return;
   }
-  if (!uiState.legId) {
-    showMessage("Please enter a Leg ID", "error");
+  if (!uiState.gameId) {
+    showMessage("Please create a game first", "error");
     return;
   }
   submitTurnToAPI();
@@ -273,14 +315,14 @@ async function submitTurnToAPI() {
   );
 
   try {
-    const response = await fetch(
-      `${uiState.apiBaseUrl}/GameRules/${uiState.legId}/throws`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(uiState.currentThrows),
-      }
-    );
+    const url = uiState.gameId
+      ? `${uiState.apiBaseUrl}/GameRules/throws?gameId=${uiState.gameId}`
+      : `${uiState.apiBaseUrl}/GameRules/throws`;
+    const response = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(uiState.currentThrows),
+    });
 
     if (!response.ok) {
       const errorData = await response.json();
@@ -339,11 +381,11 @@ function clearMessage() {
 function showModal(title, message) {
   modalTitle.textContent = title;
   modalMessage.textContent = message;
-  modal.style.display = "block";
+  winnerModal.style.display = "block";
 }
 
 function closeModal() {
-  modal.style.display = "none";
+  winnerModal.style.display = "none";
 }
 
 function getWinnerName() {

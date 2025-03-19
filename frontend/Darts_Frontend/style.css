@@ -249,3 +249,55 @@ input[type="number"] {
   margin: 15px 0;
   min-height: 40px;
 }
+
+.modal-form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.modal-form label {
+  font-weight: bold;
+  margin-top: 10px;
+}
+
+.modal-form input,
+.modal-form select {
+  padding: 5px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.modal-form button {
+  margin-top: 20px;
+}
+
+.segment-btn.miss {
+  background-color: #dc3545;
+  color: white;
+}
+
+.segment-btn.miss:hover {
+  background-color: #c82333;
+}
+
+.segment-btn.miss.selected {
+  background-color: #a71d2a;
+  color: white;
+}
+
+.segment-btn.bull {
+  background-color: #28a745;
+  color: white;
+}
+
+.segment-btn.bull:hover {
+  background-color: #218838;
+}
+
+.segment-btn.bull.selected {
+  background-color: #1c7430;
+  color: white;
+}
