@@ -22,7 +22,9 @@ const GamesListWrapper = async (root) => {
           <th>Actions</th>
         </tr>
       </thead>
-      <tbody id="games-table-body"></tbody>
+      <tbody id="games-table-body">
+        <tr><td colspan="10" class="loading-message">Loading games...</td></tr>
+      </tbody>
     </table>
   `;
 
@@ -30,12 +32,30 @@ const GamesListWrapper = async (root) => {
   const gamesTableBody = document.getElementById("games-table-body");
 
   const renderGames = async () => {
-    gamesTableBody.innerHTML = "";
-    const games = await GamesList(
-      (gameId) => GameDetailsModal(gameId, root),
-      renderGames
-    );
-    games.forEach((gameRow) => gamesTableBody.appendChild(gameRow));
+    gamesTableBody.innerHTML = `
+      <tr><td colspan="10" class="loading-message">Loading games...</td></tr>
+    `;
+
+    try {
+      const games = await GamesList(
+        (gameId) => GameDetailsModal(gameId, root),
+        renderGames
+      );
+      gamesTableBody.innerHTML = "";
+      games.forEach((gameRow) => gamesTableBody.appendChild(gameRow));
+    } catch (error) {
+      gamesTableBody.innerHTML = `
+        <tr>
+          <td colspan="10" class="error-message">
+            Failed to load games: ${error.message || "Unknown error"}.
+            <button id="retry-btn" class="btn btn-secondary">Retry</button>
+          </td>
+        </tr>
+      `;
+      document
+        .getElementById("retry-btn")
+        .addEventListener("click", renderGames);
+    }
   };
 
   await renderGames();

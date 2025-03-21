@@ -6,28 +6,29 @@ const CreateGameModal = (onSubmit) => {
   modal.className = "modal";
   modal.style.display = "none";
   modal.innerHTML = `
-    <div class="modal-content">
-      <span id="create-modal-close" class="modal-close">×</span>
-      <h2>Create New Game</h2>
-      <div class="modal-form">
-        <label for="player-ids">Player IDs (comma-separated):</label>
-        <input type="text" id="player-ids" placeholder="e.g., 1,2" />
-        <label for="starting-score">Starting Score:</label>
-        <select id="starting-score">
-          <option value="301">301</option>
-          <option value="501" selected>501</option>
-          <option value="701">701</option>
-        </select>
-        <label for="sets-to-win">Sets to Win:</label>
-        <input type="number" id="sets-to-win" min="1" max="3" value="1" />
-        <label for="legs-per-set">Legs per Set:</label>
-        <input type="number" id="legs-per-set" min="1" max="3" value="1" />
-        <label for="must-finish-on-double">Must Finish on Double:</label>
-        <input type="checkbox" id="must-finish-on-double" checked />
-        <button id="create-game-submit" class="create-game-btn">Create Game</button>
-      </div>
+  <div class="modal-content">
+    <span id="create-modal-close" class="modal-close">×</span>
+    <h2>Create New Game</h2>
+    <div class="modal-form">
+      <label for="player-ids">Player IDs (comma-separated):</label>
+      <input type="text" id="player-ids" placeholder="e.g., 1,2" />
+      <label for="starting-score">Starting Score:</label>
+      <select id="starting-score">
+        <option value="301">301</option>
+        <option value="501" selected>501</option>
+        <option value="701">701</option>
+      </select>
+      <label for="sets-to-win">Sets to Win:</label>
+      <input type="number" id="sets-to-win" min="1" max="3" value="1" />
+      <label for="legs-per-set">Legs per Set:</label>
+      <input type="number" id="legs-per-set" min="1" max="3" value="1" />
+      <label for="must-finish-on-double">Must Finish on Double:</label>
+      <input type="checkbox" id="must-finish-on-double" checked />
+      <div id="create-game-error" class="error-message" style="display: none;"></div>
+      <button id="create-game-submit" class="create-game-btn">Create Game</button>
     </div>
-  `;
+  </div>
+`;
 
   document.body.appendChild(modal);
 

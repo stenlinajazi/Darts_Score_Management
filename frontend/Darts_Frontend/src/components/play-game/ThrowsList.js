@@ -8,10 +8,6 @@ const ThrowsList = (throws) => {
   list.id = "throws-list";
 
   throws.forEach((throwData, index) => {
-    const normalizedThrow = {
-      segment: throwData.segment || throwData.Segment || 0,
-      multiplier: throwData.multiplier || throwData.Multiplier || 0,
-    };
     const points = calculateThrowPoints(throwData);
     const throwText = formatThrowText(throwData);
 

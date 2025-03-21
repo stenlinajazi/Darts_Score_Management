@@ -31,6 +31,10 @@ const PlayerStatsModal = async (playerId) => {
         throw new Error("Invalid stats data");
       }
 
+      if (!stats.last10LegsStats || !stats.allStats) {
+        throw new Error("Incomplete stats data structure");
+      }
+
       statsContent.innerHTML = `
         <p><strong>Player:</strong> ${stats.playerName} (ID: ${stats.playerId})</p>
         <p><strong>Total Legs Played:</strong> ${stats.totalLegsPlayed}</p>

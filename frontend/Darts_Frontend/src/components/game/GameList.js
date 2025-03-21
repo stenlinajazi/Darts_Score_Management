@@ -7,7 +7,7 @@ const GamesList = async (onDetailsClick, onDeleteClick) => {
     return games.map((game) => GameCard(game, onDetailsClick, onDeleteClick));
   } catch (error) {
     console.error("Error fetching games:", error.message);
-    return [];
+    throw error;
   }
 };
 

@@ -4,8 +4,8 @@ export const SEGMENTS = Array.from({ length: 20 }, (_, i) => i + 1).concat([
 export const MULTIPLIERS = [1, 2, 3];
 
 export const formatThrowText = (throwData) => {
-  const segment = throwData.segment || throwData.Segment || 0;
-  const multiplier = throwData.multiplier || throwData.Multiplier || 0;
+  const segment = throwData.segment;
+  const multiplier = throwData.multiplier;
 
   if (segment === 0 && multiplier === 1) {
     return "Miss";
@@ -32,8 +32,5 @@ export const formatThrowText = (throwData) => {
 };
 
 export const calculateThrowPoints = (throwData) => {
-  const segment = throwData.segment || throwData.Segment || 0;
-  const multiplier = throwData.multiplier || throwData.Multiplier || 0;
-
-  return segment * multiplier;
+  return throwData.segment * throwData.multiplier;
 };

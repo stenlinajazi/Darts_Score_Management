@@ -3,7 +3,7 @@ import WinnerModal from "../modal/WinnerModal.js";
 import PlayerCard from "./PlayerCard.js";
 import ThrowsList from "./ThrowsList.js";
 import { submitThrows } from "../../services/apiService.js";
-import { SEGMENTS, MULTIPLIERS } from "../../services/gameService.js";
+import { MULTIPLIERS } from "../../services/gameService.js";
 
 const PlayGame = (root) => {
   let state = {
@@ -165,10 +165,7 @@ const PlayGame = (root) => {
       return;
     }
 
-    if (
-      state.selectedSegment === SEGMENTS.MISS ||
-      state.selectedSegment === 0
-    ) {
+    if (state.selectedSegment === 0) {
       if (state.selectedMultiplier !== MULTIPLIERS[0]) {
         showMessage("Miss can only be single (no multiplier)", "error");
         selectMultiplier(MULTIPLIERS[0]);
@@ -177,7 +174,7 @@ const PlayGame = (root) => {
     }
 
     if (state.selectedSegment === 25) {
-      if (state.selectedMultiplier === MULTIPLIERS[2]) {
+      if (state.selectedMultiplier === 3) {
         showMessage("Bull can only be single or double, not triple", "error");
         state.selectedSegment = null;
         document
