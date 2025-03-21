@@ -201,40 +201,40 @@ input[type="number"] {
 }
 
 .modal {
-  display: none;
   position: fixed;
-  z-index: 1;
-  left: 0;
   top: 0;
+  left: 0;
   width: 100%;
   height: 100%;
-  overflow: auto;
-  background-color: rgba(0, 0, 0, 0.4);
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
 }
 
 .modal-content {
-  background-color: #fff;
-  margin: 15% auto;
+  background-color: white;
   padding: 20px;
-  border: 1px solid #888;
+  border-radius: 5px;
   width: 80%;
-  max-width: 400px;
-  border-radius: 8px;
-  text-align: center;
+  max-width: 600px;
+  max-height: 80vh;
+  overflow-y: auto;
+  position: relative;
 }
 
 .modal-close {
-  color: #aaa;
-  float: right;
-  font-size: 28px;
-  font-weight: bold;
+  position: absolute;
+  top: 10px;
+  right: 15px;
+  font-size: 24px;
   cursor: pointer;
+  color: #333;
 }
 
-.modal-close:hover,
-.modal-close:focus {
-  color: #000;
-  text-decoration: none;
+.modal-close:hover {
+  color: #ff0000;
 }
 
 #modal-title {
@@ -248,4 +248,165 @@ input[type="number"] {
 #message-container {
   margin: 15px 0;
   min-height: 40px;
+}
+
+.modal-form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.modal-form label {
+  font-weight: bold;
+  margin-top: 10px;
+}
+
+.modal-form input,
+.modal-form select {
+  padding: 5px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.modal-form button {
+  margin-top: 20px;
+}
+
+.segment-btn.miss {
+  background-color: #dc3545;
+  color: white;
+}
+
+.segment-btn.miss:hover {
+  background-color: #c82333;
+}
+
+.segment-btn.miss.selected {
+  background-color: #a71d2a;
+  color: white;
+}
+
+.segment-btn.bull {
+  background-color: #28a745;
+  color: white;
+}
+
+.segment-btn.bull:hover {
+  background-color: #218838;
+}
+
+.segment-btn.bull.selected {
+  background-color: #1c7430;
+  color: white;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 20px;
+}
+
+table,
+th,
+td {
+  border: 1px solid #ddd;
+  padding: 8px;
+}
+
+th {
+  background-color: #f2f2f2;
+  text-align: left;
+}
+
+.throw-history {
+  margin-left: 20px;
+}
+
+.throw-history ul {
+  list-style-type: disc;
+  padding-left: 20px;
+}
+
+.create-game-btn {
+  padding: 10px;
+  background-color: #007bff;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 16px;
+}
+
+.create-game-btn:hover {
+  background-color: #0056b3;
+}
+
+#players-table-container {
+  margin-top: 20px;
+}
+
+#players-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 20px;
+}
+
+#players-table th,
+#players-table td {
+  border: 1px solid #ddd;
+  padding: 8px;
+  text-align: left;
+}
+
+#players-table th {
+  background-color: #f2f2f2;
+}
+
+#players-table td img.player-image {
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+#players-table td .btn {
+  margin-right: 5px;
+}
+
+.navigation {
+  display: flex;
+  gap: 10px;
+  padding: 10px;
+  background-color: #f8f8f8;
+  margin-bottom: 20px;
+}
+
+.error-message {
+  color: #721c24;
+  background-color: #f8d7da;
+  padding: 10px;
+  border-radius: 4px;
+  margin-top: 10px;
+  text-align: center;
+}
+
+.loading-message {
+  text-align: center;
+  padding: 20px;
+  color: #555;
+  font-style: italic;
+}
+
+.btn.btn-secondary {
+  background-color: #6c757d;
+  color: white;
+  padding: 5px 10px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  margin-left: 10px;
+}
+
+.btn.btn-secondary:hover {
+  background-color: #5a6268;
 }

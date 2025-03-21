@@ -3,6 +3,7 @@ using Darts_Score_Management.Data.Models;
 using Darts_Score_Management.DTOs.Game.State;
 using Darts_Score_Management.DTOs.Throw;
 using Darts_Score_Management.Interfaces.ServiceInterfaces;
+using Darts_Score_Management.Services;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
@@ -13,46 +14,32 @@ namespace Darts_Score_Management.Controllers
     public class GameRulesController : ControllerBase
     {
         private readonly IGameRulesEngine _gameRulesEngine;
+        private readonly IGameService _gameService;
 
-        public GameRulesController(IGameRulesEngine gameRulesEngine)
+        public GameRulesController(IGameRulesEngine gameRulesEngine, IGameService gameService)
         {
             _gameRulesEngine = gameRulesEngine;
+            _gameService = gameService;
         }
 
-        [HttpPost("{legId}/throws")]
-        public async Task<ActionResult<GameStateDTO>> ProcessTurn(int legId, [FromBody] List<CreateThrowDTO> throws)
+        [HttpPost("throws")]
+        public async Task<ActionResult<GameStateDTO>> ProcessTurn([FromBody] List<CreateThrowDTO> throws, [FromQuery] int? gameId = null)
         {
-            try
-            {
-                if (throws == null || throws.Count > 3)
-                    throw new GameRuleViolationException("A turn must contain 0 to 3 throws", "ThrowCount");
+            if (throws == null || throws.Count > 3)
+                throw new GameRuleViolationException("A turn must contain 0 to 3 throws", "ThrowCount");
 
-                var gameState = await _gameRulesEngine.ProcessTurnForLeg(legId, throws);
-                return Ok(gameState);
-            }
-            catch (GameRuleViolationException ex)
+            int legId;
+            if (gameId.HasValue)
             {
-                return BadRequest(new { message = ex.Message, rule = ex.RuleViolated });
+                legId = await _gameService.GetActiveLegIdByGameIdAsync(gameId.Value);
             }
-            catch (StatisticsUpdateException ex)
+            else
             {
-     
-                return Ok(new
-                {
-                    message = "Turn processed successfully but statistics update failed",
-                    statisticsError = ex.Message
-                });
+                legId = await _gameService.GetActiveLegIdAsync();
             }
-            catch (Exception ex)
-            {
-                return StatusCode(500, new
-                {
-                    message = "An unexpected error occurred",
-                    error = ex.Message,
-                    innerError = ex.InnerException?.Message,
-                    stackTrace = ex.StackTrace
-                });
-            }
+
+            var gameState = await _gameRulesEngine.ProcessTurnForLeg(legId, throws);
+            return Ok(gameState);
         }
     }
 }

@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using Darts_Score_Management.CustomExceptions;
 using Darts_Score_Management.Data.Models;
 using Darts_Score_Management.DTOs.Game.Core;
 using Darts_Score_Management.DTOs.Game.Response;
@@ -89,21 +90,10 @@ namespace Darts_Score_Management.Services
             }).ToList();
 
             Game createdGame = await _gameRepository.CreateGameWithPlayersAsync(game, gamePlayers);
-            // Automatically create sets and legs for a best-of game
-            await CreateSetsAndLegsForGame(createdGame, createGameDto.Settings.SetsToWin, createGameDto.Settings.LegsPerSet);
+            SetDTO firstSet = await CreateNextSetAsync(createdGame.Id);
+            //await CreateNextLegAsync(firstSet.Id);
             return await GetGameByIdAsync(createdGame.Id);
         }
-
-        //public async Task<GameDTO> UpdateGameAsync(int id, GameDTO gameDto)
-        //{
-        //    var game = await _gameRepository.GetByIdAsync(id);
-        //    if (game == null)
-        //        throw new KeyNotFoundException($"Game with id {id} not found");
-
-        //    _mapper.Map(gameDto, game);
-        //    await _gameRepository.UpdateAsync(game);
-        //    return _mapper.Map<GameDTO>(game);
-        //}
 
         public async Task DeleteGameAsync(int id)
         {
@@ -160,32 +150,69 @@ namespace Darts_Score_Management.Services
             return _mapper.Map<GameDTO>(game);
         }
 
-        private async Task CreateSetsAndLegsForGame(Game game, int setsToWin, int legsPerSet)
+        public async Task<SetDTO> CreateNextSetAsync(int gameId)
         {
-            
-            for (int setNumber = 1; setNumber <= setsToWin; setNumber++)
+            GameDTO game = await GetGameByIdAsync(gameId);
+            if (game == null)
+                throw new KeyNotFoundException($"Game with ID {gameId} not found");
+
+            int nextSetNumber = game.Sets.Count + 1;
+            CreateSetDTO createSetDto = new CreateSetDTO
             {
-                CreateSetDTO createSetDto = new CreateSetDTO
-                {
-                    GameId = game.Id,
-                    SetNumber = setNumber
-                };
-
-                SetDTO setDto = await _setService.CreateSetAsync(createSetDto);
-
-                for (int legNumber = 1; legNumber <= legsPerSet; legNumber++)
-                {
-                    CreateLegDTO createLegDto = new CreateLegDTO
-                    {
-                        SetId = setDto.Id,
-                        LegNumber = legNumber
-                    };
-
-                    await _legService.CreateLegAsync(createLegDto);
-                }
-            }
+                GameId = gameId,
+                SetNumber = nextSetNumber
+            };
+            SetDTO setDto = await _setService.CreateSetAsync(createSetDto);
+            await CreateNextLegAsync(setDto.Id);
+            return setDto;
         }
 
-       
+        public async Task<LegDTO> CreateNextLegAsync(int setId)
+        {
+            SetDTO set = await _setService.GetSetByIdAsync(setId);
+            if (set == null)
+                throw new KeyNotFoundException($"Set with ID {setId} not found");
+
+            int nextLegNumber = set.Legs.Count + 1;
+            CreateLegDTO createLegDto = new CreateLegDTO
+            {
+                SetId = set.Id,
+                LegNumber = nextLegNumber
+            };
+            return await _legService.CreateLegAsync(createLegDto);
+        }
+
+
+        public async Task<int> GetActiveLegIdAsync()
+        {
+            var legId = await _gameRepository.GetActiveLegIdForMostRecentGameAsync();
+            if (legId == null)
+                throw new InvalidOperationException("No active leg found. Please create a new game or complete existing sets/legs.");
+            return legId.Value;
+        }
+
+        public async Task<int> GetActiveLegIdByGameIdAsync(int gameId)
+        {
+            var game = await GetGameByIdAsync(gameId);
+            if (game == null)
+                throw new KeyNotFoundException($"Game with ID {gameId} not found");
+
+            if (game.IsComplete)
+                throw new InvalidOperationException($"Game with ID {gameId} is already complete.");
+
+            var activeLeg = game.Sets
+                .Where(s => !s.WinnerPlayerId.HasValue)
+                .OrderBy(s => s.SetNumber)
+                .SelectMany(s => s.Legs)
+                .Where(l => !l.WinnerPlayerId.HasValue)
+                .OrderBy(l => l.LegNumber)
+                .FirstOrDefault();
+
+            if (activeLeg == null)
+                throw new InvalidOperationException($"No active leg found in game with ID {gameId}.");
+
+            return activeLeg.Id;
+        }
+
     }
 }

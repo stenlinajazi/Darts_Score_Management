@@ -64,9 +64,6 @@ namespace Darts_Score_Management.Services
 
                 Turn turn = await SetupNewTurn(legId);
 
-                if (!await ValidateLegIsActive(legId, turn.PlayerId))
-                    throw new GameRuleViolationException("Cannot make throws to this leg - you must complete active legs and sets first", "LegSequence");
-
                 if (!await _validationService.ValidateTurnOrder(turn.Id, turn.PlayerId))
                     throw new GameRuleViolationException("Invalid turn order", "TurnOrder");
 
@@ -326,6 +323,13 @@ namespace Darts_Score_Management.Services
             Dictionary<int, int> legsWonPerPlayer = players.ToDictionary(p => p, p => set.Legs.Count(l => l.WinnerPlayerId == p));
             bool isTie = players.Count > 1 && players.All(p => legsWonPerPlayer[p] == legsWonPerPlayer[players[0]]);
 
+            if (totalLegs < game.Settings.LegsPerSet && !isTie)
+            {
+                // Create the next leg in the current set
+                await _gameService.CreateNextLegAsync(set.Id);
+                return;
+            }
+
             if (legsWon >= game.Settings.LegsPerSet)
             {
                 // Update set-level statistics before ending the set
@@ -335,8 +339,7 @@ namespace Darts_Score_Management.Services
             }
             else if (isTie && totalLegs == game.Settings.LegsPerSet)
             {
-               
-                await CreateTiebreakerLeg(set.Id, game.Settings.LegsPerSet);
+                await _gameService.CreateNextLegAsync(set.Id);
             }
         }
 
@@ -350,6 +353,12 @@ namespace Darts_Score_Management.Services
             Dictionary<int, int> setsPerPlayer = players.ToDictionary(p => p, p => game.Sets.Count(s => s.WinnerPlayerId == p));
             bool isTie = players.Count > 1 && players.All(p => setsPerPlayer[p] == setsPerPlayer[players[0]]);
 
+            if (totalSets < game.Settings.SetsToWin && !isTie)
+            {
+                await _gameService.CreateNextSetAsync(game.Id);
+                return;
+            }
+
             if (setsWon >= game.Settings.SetsToWin)
             {
                 // Update game-level statistics before ending the game
@@ -359,100 +368,8 @@ namespace Darts_Score_Management.Services
             }
             else if (isTie && totalSets == game.Settings.SetsToWin)
             {
-               
-                await CreateTiebreakerSet(game.Id, game.Settings.SetsToWin);
+                await _gameService.CreateNextSetAsync(game.Id);
             }   
-        }
-
-        private async Task CreateTiebreakerLeg(int setId, int legsPerSet)
-        {
-            SetDTO set = await _setService.GetSetByIdAsync(setId);
-            int totalLegs = set.Legs.Count;
-            int newLegNumber = totalLegs + 1;
-
-            var createLegDto = new CreateLegDTO
-            {
-                SetId = setId,
-                LegNumber = newLegNumber
-            };
-
-            await _legService.CreateLegAsync(createLegDto);
-        }
-
-        private async Task CreateTiebreakerSet(int gameId, int setsToWin)
-        {
-            GameDTO game = await _gameService.GetGameByIdAsync(gameId);
-            int totalSets = game.Sets.Count;
-            int newSetNumber = totalSets + 1;
-
-            CreateSetDTO createSetDto = new CreateSetDTO
-            {
-                GameId = gameId,
-                SetNumber = newSetNumber
-            };
-
-            SetDTO setDto = await _setService.CreateSetAsync(createSetDto);
-
-            // Create initial legs for the new set based on LegsPerSet
-            int initialLegs = game.Settings.LegsPerSet;
-            for (int legNumber = 1; legNumber <= initialLegs; legNumber++)
-            {
-                CreateLegDTO createLegDto = new CreateLegDTO
-                {
-                    SetId = setDto.Id,
-                    LegNumber = legNumber
-                };
-
-                await _legService.CreateLegAsync(createLegDto);
-            }
-        }
-        private async Task<bool> ValidateLegIsActive(int legId, int playerId)
-        {
-            Leg leg = await _legService.GetLegByIdAsync(legId);
-            if (leg == null)
-                return false;
-
-            SetDTO set = await _setService.GetSetByIdAsync(leg.SetId);
-            if (set == null)
-                return false;
-
-            GameDTO game = await _gameService.GetGameByIdAsync(set.GameId);
-            if (game == null)
-                return false;
-
-            // Check if the game is still active
-            var winner = game.Players.FirstOrDefault(gp => gp.IsWinner);
-            if (winner != null)
-                return false;
-
-            // Check if the set is active (previous sets are all completed)
-            IEnumerable<SetDTO> sets = await _setService.GetSetsByGameIdAsync(game.Id);
-            List<SetDTO> orderedSets = sets.OrderBy(s => s.SetNumber).ToList();
-
-            // Find the current set's position
-            int currentSetIndex = orderedSets.FindIndex(s => s.Id == set.Id);
-
-            // Check if any previous set is incomplete
-            for (int i = 0; i < currentSetIndex; i++)
-            {
-                if (orderedSets[i].WinnerPlayerId == null)
-                    return false; // A previous set is not complete
-            }
-
-            // Check if the leg is active (previous legs in this set are all completed)
-            IEnumerable<LegDTO> legs = await _legService.GetLegsBySetIdAsync(set.Id);
-            List<LegDTO> orderedLegs = legs.OrderBy(l => l.LegNumber).ToList();
-
-            // Find the current leg's position
-            int currentLegIndex = orderedLegs.FindIndex(l => l.Id == legId);
-
-            // Check if any previous leg is incomplete
-            for (int i = 0; i < currentLegIndex; i++)
-            {
-                if (orderedLegs[i].WinnerPlayerId == null)
-                    return false; // A previous leg is not complete
-            }
-            return true;
         }
         private bool IsValidDartSegment(int segment, int multiplier)
         {

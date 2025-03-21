@@ -277,5 +277,23 @@ namespace Darts_Score_Management.Repositories
                 throw;
             }
         }
+
+
+        public async Task<int?> GetActiveLegIdForMostRecentGameAsync()
+        {
+            var activeLeg = await _context.Games
+                .Where(g => !g.IsComplete)
+                .OrderByDescending(g => g.Id)
+                .Take(1)
+                .SelectMany(g => g.Sets)
+                .Where(s => !s.WinnerPlayerId.HasValue)
+                .OrderBy(s => s.SetNumber) 
+                .SelectMany(s => s.Legs)
+                .Where(l => !l.WinnerPlayerId.HasValue)
+                .OrderBy(l => l.LegNumber) 
+                .Select(l => l.Id)
+                .FirstOrDefaultAsync();
+            return activeLeg != 0 ? activeLeg : null;
+        }
     }
 }
