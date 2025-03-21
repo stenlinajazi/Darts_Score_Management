@@ -241,7 +241,7 @@ namespace Darts_Score_Management.Services
         private PlayerStatsDTO CalculatePlayerStats(IEnumerable<LegStats> last10LegStats, IEnumerable<GamePlayer> gamePlayers)
         {
             if (!gamePlayers.Any())
-                throw new NullReferenceException("No game players found for the given player ID.");
+                throw new ArgumentException("No game players found for the given player ID.");
             int playerId = gamePlayers.First().PlayerId;
             string playerName = gamePlayers.First().Player?.Name ?? throw new NullReferenceException("Player name is null.");
 
