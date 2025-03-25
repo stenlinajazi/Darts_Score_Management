@@ -15,7 +15,7 @@ namespace Darts_Score_Management.DTOs.Game.Core
         public GameSettingsDTO Settings { get; set; }
 
         [Required]
-        [MinLength(2)]
+        [MinLength(2, ErrorMessage = "At least two player's are required")]
         public List<int> PlayerIds { get; set; }
     }
 }

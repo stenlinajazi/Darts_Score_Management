@@ -10,26 +10,20 @@ namespace Darts_Score_Management.Services
     public class GamePlayerService : IGamePlayerService
     {
         private readonly IGamePlayerRepository _gamePlayerRepository;
-        private readonly IMapper _mapper;
-
-        public GamePlayerService(
-            IGamePlayerRepository gamePlayerRepository,
-            IMapper mapper)
+       
+        public GamePlayerService(IGamePlayerRepository gamePlayerRepository)
         {
             _gamePlayerRepository = gamePlayerRepository;
-            _mapper = mapper;
         }
 
         public async Task<GamePlayerDTO> GetGamePlayerByIdAsync(int id)
         {
-            GamePlayer gamePlayer = await _gamePlayerRepository.GetGamePlayerWithStatsAsync(id);
-            return _mapper.Map<GamePlayerDTO>(gamePlayer);
+           return await _gamePlayerRepository.GetGamePlayerAsync(id);      
         }
 
         public async Task<IEnumerable<GamePlayerDTO>> GetGamePlayersByGameIdAsync(int gameId)
         {
-            IEnumerable<GamePlayer> gamePlayers = await _gamePlayerRepository.GetGamePlayersForGameAsync(gameId);
-            return _mapper.Map<IEnumerable<GamePlayerDTO>>(gamePlayers);
+            return await  _gamePlayerRepository.GetGamePlayersForGameAsync(gameId);
         }
     }
 }

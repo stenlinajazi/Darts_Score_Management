@@ -1,8 +1,10 @@
-﻿using Darts_Score_Management.DTOs.GamePlayer;
+﻿using Darts_Score_Management.Data.Models;
+using Darts_Score_Management.DTOs.GamePlayer;
 using Darts_Score_Management.DTOs.Statistic;
 using Darts_Score_Management.Interfaces.ServiceInterfaces;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using System.ComponentModel.DataAnnotations;
 
 namespace Darts_Score_Management.Controllers
 {
@@ -20,6 +22,11 @@ namespace Darts_Score_Management.Controllers
         [HttpGet("game/{gameId}")]
         public async Task<ActionResult<IEnumerable<GamePlayerDTO>>> GetGamePlayers(int gameId)
         {
+            if (gameId <= 0)
+            {
+                ModelState.AddModelError("gameId", "Game ID must be a positive number.");
+                return BadRequest(ModelState);
+            }
             var gamePlayers = await _gamePlayerService.GetGamePlayersByGameIdAsync(gameId);
             return Ok(gamePlayers);
         }
@@ -28,6 +35,11 @@ namespace Darts_Score_Management.Controllers
         public async Task<ActionResult<GamePlayerDTO>> GetGamePlayer(int id)
         {
             var gamePlayer = await _gamePlayerService.GetGamePlayerByIdAsync(id);
+            if (id <= 0)
+            {
+                ModelState.AddModelError("id", "ID must be a positive number.");
+                return BadRequest(ModelState);
+            }
             if (gamePlayer == null)
             {
                 return NotFound();

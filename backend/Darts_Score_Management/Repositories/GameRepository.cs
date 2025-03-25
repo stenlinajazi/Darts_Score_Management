@@ -255,14 +255,13 @@ namespace Darts_Score_Management.Repositories
             using var transaction = await _context.Database.BeginTransactionAsync();
             try
             {
-                // Add and save the Game first to generate its Id
                 _context.Games.Add(game);
                 await _context.SaveChangesAsync();
 
-                // Set the GameId for each GamePlayer and add them
+               
                 foreach (var gamePlayer in gamePlayers)
                 {
-                    gamePlayer.GameId = game.Id; // Assign the generated Game.Id
+                    gamePlayer.GameId = game.Id;
                 }
 
                 await _context.GamePlayers.AddRangeAsync(gamePlayers);
@@ -290,10 +289,11 @@ namespace Darts_Score_Management.Repositories
                 .OrderBy(s => s.SetNumber) 
                 .SelectMany(s => s.Legs)
                 .Where(l => !l.WinnerPlayerId.HasValue)
-                .OrderBy(l => l.LegNumber) 
-                .Select(l => l.Id)
+                .OrderBy(l => l.LegNumber)
+                .Select(l => (int?)l.Id) 
                 .FirstOrDefaultAsync();
-            return activeLeg != 0 ? activeLeg : null;
+
+            return activeLeg;
         }
     }
 }

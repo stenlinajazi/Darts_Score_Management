@@ -1,5 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
+using System.ComponentModel.DataAnnotations;
 using System.Net;
 using System.Text.Json;
 
@@ -48,15 +50,30 @@ namespace Darts_Score_Management.Middleware
 
             switch (exception)
             {
+                case ValidationException validationEx: 
+                    problemDetails.Status = StatusCodes.Status400BadRequest;
+                    problemDetails.Title = "Validation Error";
+                    problemDetails.Detail = validationEx.Message;
+                    break;
+                case ArgumentNullException argNullEx:
+                    problemDetails.Status = StatusCodes.Status400BadRequest;
+                    problemDetails.Title = "Invalid Argument";
+                    problemDetails.Detail = argNullEx.Message;
+                    break;
                 case ArgumentException argEx:
                     problemDetails.Status = StatusCodes.Status400BadRequest;
                     problemDetails.Title = "Invalid Argument";
                     problemDetails.Detail = argEx.Message;
                     break;
-                case UnauthorizedAccessException:
-                    problemDetails.Status = StatusCodes.Status401Unauthorized;
-                    problemDetails.Title = "Unauthorized";
-                    problemDetails.Detail = "Unauthorized access.";
+                case DbUpdateException dbEx:
+                    problemDetails.Status = StatusCodes.Status400BadRequest;
+                    problemDetails.Title = "Database Error";
+                    problemDetails.Detail = "An error occurred while saving to the database. " + (dbEx.InnerException?.Message ?? dbEx.Message);
+                    break;
+                case InvalidOperationException invalidOpEx:
+                    problemDetails.Status = StatusCodes.Status400BadRequest;
+                    problemDetails.Title = "Operation Error";
+                    problemDetails.Detail = invalidOpEx.Message;
                     break;
                 case KeyNotFoundException notFoundEx:
                     problemDetails.Status = StatusCodes.Status404NotFound;

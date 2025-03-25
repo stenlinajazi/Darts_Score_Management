@@ -7,6 +7,7 @@ using Darts_Score_Management.DTOs.Game.Statistics;
 using Darts_Score_Management.DTOs.Leg;
 using Darts_Score_Management.DTOs.Set;
 using Darts_Score_Management.DTOs.Turn;
+using Darts_Score_Management.Enums;
 using Darts_Score_Management.Interfaces.RepositoryInterfaces;
 using Darts_Score_Management.Interfaces.ServiceInterfaces;
 using System.ComponentModel.DataAnnotations;
@@ -54,20 +55,11 @@ namespace Darts_Score_Management.Services
         public async Task<GameDTO> CreateGameAsync(CreateGameDTO createGameDto)
         {
             if (createGameDto == null) throw new ArgumentNullException(nameof(createGameDto));
-            if (createGameDto.PlayerIds == null || !createGameDto.PlayerIds.Any())
-                throw new ValidationException("At least one player is required");
-            if (createGameDto.Settings == null)
-                throw new ValidationException("Game settings are required");
-            if (createGameDto.Settings.SetsToWin < 1)
-                throw new ValidationException("SetsToWin must be at least 1");
-            if (createGameDto.Settings.LegsPerSet < 1)
-                throw new ValidationException("LegsPerSet must be at least 1");
-            if (createGameDto.Settings.SetsToWin > 3)
-                throw new ValidationException("SetsToWin cannot exceed 3");
-            if (createGameDto.Settings.LegsPerSet > 3)
-                throw new ValidationException("LegsPerSet cannot exceed 3");
+ 
             if (createGameDto.StartingScore != 301 && createGameDto.StartingScore != 501 && createGameDto.StartingScore != 701)
                 throw new ValidationException("Starting score must be 301, 501, or 701");
+            if (!Enum.IsDefined(typeof(GameType), createGameDto.Type))
+                throw new ValidationException("Game type must be a valid GameType (X01 or Cricket).");
 
             Game game = _mapper.Map<Game>(createGameDto);
             game.StartedAt = DateTime.UtcNow;
@@ -86,12 +78,11 @@ namespace Darts_Score_Management.Services
             List<GamePlayer> gamePlayers = createGameDto.PlayerIds.Select((playerId, index) => new GamePlayer
             {
                 PlayerId = playerId,
-                TurnOrder = index + 1 // Initialize TurnOrder based on the order of PlayerIds in the list
+                TurnOrder = index + 1 
             }).ToList();
 
             Game createdGame = await _gameRepository.CreateGameWithPlayersAsync(game, gamePlayers);
             SetDTO firstSet = await CreateNextSetAsync(createdGame.Id);
-            //await CreateNextLegAsync(firstSet.Id);
             return await GetGameByIdAsync(createdGame.Id);
         }
 

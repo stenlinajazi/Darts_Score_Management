@@ -73,10 +73,18 @@ const BaseModal = ({
         onSubmit(result);
         closeModal();
       } catch (error) {
-        console.error(`Error in ${title.toLowerCase()}:`, error.message);
-        errorMessage.textContent =
-          error.message ||
-          `Failed to ${title.toLowerCase()}. Please try again.`;
+        console.error(`Error in ${title.toLowerCase()}:`, error);
+        let errorText = `Failed to ${title.toLowerCase()}. Please try again.`;
+        if (error.message) {
+          errorText = error.message;
+        } else if (error.response && error.response.data) {
+          errorText =
+            error.response.data.detail ||
+            error.response.data.message ||
+            errorText;
+        }
+
+        errorMessage.textContent = errorText;
         errorMessage.style.display = "block";
       }
     });
