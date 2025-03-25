@@ -1,6 +1,7 @@
 ﻿using Darts_Score_Management.Data;
 using Darts_Score_Management.Interfaces.RepositoryInterfaces;
 using Microsoft.EntityFrameworkCore;
+using System.Data.Common;
 
 namespace Darts_Score_Management.Repositories
 {
@@ -17,40 +18,88 @@ namespace Darts_Score_Management.Repositories
 
         public virtual async Task<T> GetByIdAsync(int id)
         {
-            return await _dbSet.FindAsync(id);
+            try
+            {
+                return  await _dbSet.FindAsync(id);
+            }
+            catch (DbException ex)
+            {
+                throw new InvalidOperationException($"Failed to retrieve entity with Id {id} from the database.", ex);
+            }
         }
 
         public virtual async Task<IEnumerable<T>> GetAllAsync()
         {
-            return await _dbSet.ToListAsync();
+            try
+            {
+                return await _dbSet.ToListAsync();
+            }
+            catch (DbException ex)
+            {
+                throw new InvalidOperationException("Failed to retrieve entities from the database.", ex);
+            }
         }
 
         public virtual async Task<T> AddAsync(T entity)
         {
-            await _dbSet.AddAsync(entity);
-            await _context.SaveChangesAsync();
-            return entity;
+            if (entity == null)
+                throw new ArgumentNullException(nameof(entity));
+
+            try
+            {
+                await _dbSet.AddAsync(entity);
+                await _context.SaveChangesAsync();
+                return entity;
+            }
+            catch (DbUpdateException ex)
+            {
+                throw new InvalidOperationException("Failed to add entity to the database.", ex);
+            }
         }
 
         public virtual async Task UpdateAsync(T entity)
         {
-            _dbSet.Update(entity);
-            await _context.SaveChangesAsync();
+            if (entity == null)
+                throw new ArgumentNullException(nameof(entity));
+
+            try
+            {
+                _dbSet.Update(entity);
+                await _context.SaveChangesAsync();
+            }
+            catch (DbUpdateException ex)
+            {
+                throw new InvalidOperationException("Failed to update entity in the database.", ex);
+            }
         }
 
         public virtual async Task DeleteAsync(int id)
         {
-            var entity = await GetByIdAsync(id);
-            if (entity != null)
+            try
             {
-                _dbSet.Remove(entity);
-                await _context.SaveChangesAsync();
+                var entity = await GetByIdAsync(id);
+                if (entity != null)
+                {
+                    _dbSet.Remove(entity);
+                    await _context.SaveChangesAsync();
+                }
+            }
+            catch (DbUpdateException ex)
+            {
+                throw new InvalidOperationException($"Failed to delete entity with Id {id} from the database.", ex);
             }
         }
 
         public virtual async Task<bool> ExistsAsync(int id)
         {
-            return await _dbSet.FindAsync(id) != null;
+            try
+            {
+                return await _dbSet.FindAsync(id) != null;
+            }
+            catch (DbException ex)
+            {
+                throw new InvalidOperationException($"Failed to check existence of entity with Id {id}.", ex);
+            }
         }
     }
 

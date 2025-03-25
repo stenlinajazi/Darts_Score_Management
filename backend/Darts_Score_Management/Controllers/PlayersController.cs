@@ -1,4 +1,5 @@
-﻿using Darts_Score_Management.DTOs.Player;
+﻿using Darts_Score_Management.Data.Models;
+using Darts_Score_Management.DTOs.Player;
 using Darts_Score_Management.Interfaces.ServiceInterfaces;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -35,11 +36,12 @@ namespace Darts_Score_Management.Controllers
         [HttpGet("{id}")]
         public async Task<ActionResult<PlayerDTO>> GetPlayer(int id)
         {
-            var player = await _playerService.GetPlayerByIdAsync(id);
-            if (player == null)
+            if (id <= 0)
             {
-                return NotFound();
+                ModelState.AddModelError("ID", "ID must be a positive number.");
+                return BadRequest(ModelState);
             }
+            var player = await _playerService.GetPlayerByIdAsync(id);
             return Ok(player);
         }
 

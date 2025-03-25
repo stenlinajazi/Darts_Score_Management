@@ -5,8 +5,7 @@ export const fetchGames = async () => {
     method: "GET",
     headers: { "Content-Type": "application/json" },
   });
-  if (!response.ok) throw new Error("Failed to fetch games list");
-  return response.json();
+  return handleResponse(response);
 };
 
 export const fetchGameDetails = async (gameId) => {
@@ -14,8 +13,7 @@ export const fetchGameDetails = async (gameId) => {
     method: "GET",
     headers: { "Content-Type": "application/json" },
   });
-  if (!response.ok) throw new Error("Failed to fetch game details");
-  return response.json();
+  return handleResponse(response);
 };
 
 export const createGame = async (gameData) => {
@@ -24,11 +22,7 @@ export const createGame = async (gameData) => {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(gameData),
   });
-  if (!response.ok) {
-    const errorData = await response.json();
-    throw new Error(errorData.message || "Failed to create game");
-  }
-  return response.json();
+  return handleResponse(response);
 };
 
 export const submitThrows = async (gameId, throws) => {
@@ -40,11 +34,7 @@ export const submitThrows = async (gameId, throws) => {
       body: JSON.stringify(throws),
     }
   );
-  if (!response.ok) {
-    const errorData = await response.json();
-    throw new Error(errorData.message || "Failed to submit turn");
-  }
-  return response.json();
+  return handleResponse(response);
 };
 
 export const deleteGame = async (gameId) => {
@@ -97,13 +87,20 @@ export const getPlayerStats = async (playerId) => {
 const handleResponse = async (response) => {
   if (!response.ok) {
     let errorMessage = response.statusText;
+    let errorData = {};
     try {
       const errorData = await response.json();
-      errorMessage = errorData.message || errorData.error || errorMessage;
+      errorMessage =
+        errorData.detail ||
+        errorData.message ||
+        errorData.title ||
+        errorMessage;
     } catch (e) {
       console.warn("Failed to parse error response:", e);
     }
-    throw new Error(`${response.status}: ${errorMessage}`);
+    const error = new Error(errorMessage);
+    error.response = { data: errorData };
+    throw error;
   }
 
   if (response.status === 204) {
