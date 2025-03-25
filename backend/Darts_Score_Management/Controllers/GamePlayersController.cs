@@ -34,12 +34,12 @@ namespace Darts_Score_Management.Controllers
         [HttpGet("{id}")]
         public async Task<ActionResult<GamePlayerDTO>> GetGamePlayer(int id)
         {
-            var gamePlayer = await _gamePlayerService.GetGamePlayerByIdAsync(id);
             if (id <= 0)
             {
                 ModelState.AddModelError("id", "ID must be a positive number.");
                 return BadRequest(ModelState);
             }
+            var gamePlayer = await _gamePlayerService.GetGamePlayerByIdAsync(id);
             if (gamePlayer == null)
             {
                 return NotFound();
