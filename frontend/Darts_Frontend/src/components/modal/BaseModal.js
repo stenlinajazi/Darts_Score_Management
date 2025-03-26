@@ -56,9 +56,9 @@ const BaseModal = ({
         const value = document.getElementById(field.id).value.trim();
         data[field.id] = field.type === "text" && !value ? null : value;
         return data;
-      }, {});
+      }, {}); //{ username: "JohnDoe", email: "john@example.com", age: null }
 
-      const requiredFields = fields.filter((f) => f.required).map((f) => f.id);
+      const requiredFields = fields.filter((f) => f.required).map((f) => f.id); // ["username", "email"]
       const missingFields = requiredFields.filter((id) => !formData[id]);
       if (missingFields.length > 0) {
         errorMessage.textContent = `${missingFields
@@ -66,7 +66,7 @@ const BaseModal = ({
           .join(" and ")} ${missingFields.length > 1 ? "are" : "is"} required.`;
         errorMessage.style.display = "block";
         return;
-      }
+      } // []
 
       try {
         const result = await apiCall(formData);

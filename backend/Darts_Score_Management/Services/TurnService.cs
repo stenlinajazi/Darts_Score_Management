@@ -25,6 +25,8 @@ namespace Darts_Score_Management.Services
 
         public async Task<TurnDTO> GetTurnByIdAsync(int turnId)
         {
+            if (turnId <= 0)
+                throw new ArgumentException("Turn ID must be a positive number.", nameof(turnId));
             Turn turn = await _turnRepository.GetByIdAsync(turnId);
             if (turn == null)
                 throw new KeyNotFoundException($"Turn with id {turnId} not found");

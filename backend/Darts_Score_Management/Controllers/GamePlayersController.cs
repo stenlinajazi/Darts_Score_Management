@@ -22,29 +22,37 @@ namespace Darts_Score_Management.Controllers
         [HttpGet("game/{gameId}")]
         public async Task<ActionResult<IEnumerable<GamePlayerDTO>>> GetGamePlayers(int gameId)
         {
-            if (gameId <= 0)
+            try
             {
-                ModelState.AddModelError("gameId", "Game ID must be a positive number.");
-                return BadRequest(ModelState);
+                var gamePlayers = await _gamePlayerService.GetGamePlayersByGameIdAsync(gameId);
+                return Ok(gamePlayers);
             }
-            var gamePlayers = await _gamePlayerService.GetGamePlayersByGameIdAsync(gameId);
-            return Ok(gamePlayers);
+            catch (ArgumentException ex)
+            {
+                return BadRequest(new ProblemDetails { Status = 400, Title = "Invalid Argument", Detail = ex.Message });
+            }
+            catch (KeyNotFoundException)
+            {
+                return NotFound();
+            }
         }
 
         [HttpGet("{id}")]
         public async Task<ActionResult<GamePlayerDTO>> GetGamePlayer(int id)
         {
-            if (id <= 0)
+            try
             {
-                ModelState.AddModelError("id", "ID must be a positive number.");
-                return BadRequest(ModelState);
+                var gamePlayer = await _gamePlayerService.GetGamePlayerByIdAsync(id);
+                return Ok(gamePlayer);
             }
-            var gamePlayer = await _gamePlayerService.GetGamePlayerByIdAsync(id);
-            if (gamePlayer == null)
+            catch (ArgumentException ex)
+            {
+                return BadRequest(new ProblemDetails { Status = 400, Title = "Invalid Argument", Detail = ex.Message });
+            }
+            catch (KeyNotFoundException)
             {
                 return NotFound();
             }
-            return Ok(gamePlayer);
         }
     }
 }

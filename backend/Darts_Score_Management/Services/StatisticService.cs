@@ -82,6 +82,10 @@ namespace Darts_Score_Management.Services
 
         public async Task<LegStatsDTO> GetLegStatsAsync(int legId, int gamePlayerId)
         {
+            if (legId <= 0)
+                throw new ArgumentException("Leg ID must be a positive number.", nameof(legId));
+            if (gamePlayerId <= 0)
+                throw new ArgumentException("GamePlayer ID must be a positive number.", nameof(gamePlayerId));
             LegStats legStats = await _legStatsRepository.GetByLegAndPlayerAsync(legId, gamePlayerId);
             if (legStats == null) throw new KeyNotFoundException($"Leg stats for LegId {legId} and GamePlayerId {gamePlayerId} not found.");
             return _mapper.Map<LegStatsDTO>(legStats);
@@ -89,6 +93,10 @@ namespace Darts_Score_Management.Services
 
         public async Task<SetStatsDTO> GetSetStatsAsync(int setId, int gamePlayerId)
         {
+            if (setId <= 0)
+                throw new ArgumentException("Set ID must be a positive number.", nameof(setId));
+            if (gamePlayerId <= 0)
+                throw new ArgumentException("GamePlayer ID must be a positive number.", nameof(gamePlayerId));
             SetStats setStats = await _setStatsRepository.GetBySetAndPlayerAsync(setId, gamePlayerId);
             if (setStats == null) throw new KeyNotFoundException($"Set stats for SetId {setId} and GamePlayerId {gamePlayerId} not found.");
             return _mapper.Map<SetStatsDTO>(setStats);
@@ -96,6 +104,10 @@ namespace Darts_Score_Management.Services
 
         public async Task<GameStatsDTO> GetGameStatsAsync(int gameId, int gamePlayerId)
         {
+            if (gameId <= 0)
+                throw new ArgumentException("Game ID must be a positive number.", nameof(gameId));
+            if (gamePlayerId <= 0)
+                throw new ArgumentException("GamePlayer ID must be a positive number.", nameof(gamePlayerId));
             GameStats gameStats = await _gameStatsRepository.GetByGameAndPlayerAsync(gameId, gamePlayerId);
             if (gameStats == null) throw new KeyNotFoundException($"Game stats for GameId {gameId} and GamePlayerId {gamePlayerId} not found.");
             return _mapper.Map<GameStatsDTO>(gameStats);
@@ -103,6 +115,8 @@ namespace Darts_Score_Management.Services
 
         public async Task<PlayerStatsDTO> GetPlayerStatsAsync(int playerId)
         {
+            if (playerId <= 0)
+                throw new ArgumentException("Player ID must be a positive number.", nameof(playerId));
             List<GamePlayer> gamePlayers = await GetPlayerGamePlayersAsync(playerId);
             IEnumerable<LegStats> last10LegStats = await _legStatsRepository.GetLast10LegsForPlayerAsync(playerId);
             return CalculatePlayerStats(last10LegStats, gamePlayers);

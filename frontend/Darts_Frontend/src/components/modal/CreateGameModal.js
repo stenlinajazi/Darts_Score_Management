@@ -77,8 +77,13 @@ const CreateGameModal = (onSubmit) => {
         modal.style.display = "none";
         modal.remove();
       } catch (error) {
-        console.error("Error creating game:", error.message);
-        errorMessage.textContent = "Failed to create game. Please try again.";
+        console.error(
+          "Error creating game:",
+          error.message,
+          error.response?.data
+        );
+        errorMessage.textContent =
+          error.message || "Failed to create game. Please try again.";
         errorMessage.style.display = "block";
       }
     });

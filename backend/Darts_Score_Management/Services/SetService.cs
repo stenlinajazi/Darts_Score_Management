@@ -24,9 +24,11 @@ namespace Darts_Score_Management.Services
 
         public async Task<SetDTO> GetSetByIdAsync(int id)
         {
+            if (id <= 0)
+                throw new ArgumentException("Set ID must be a positive number.", nameof(id));
             Set set = await _setRepository.GetSetWithLegsAsync(id);
             if (set == null)
-                return null;
+                throw new KeyNotFoundException($"Set with ID {id} not found.");
 
             SetDTO setDto = _mapper.Map<SetDTO>(set);
 
@@ -41,6 +43,8 @@ namespace Darts_Score_Management.Services
 
         public async Task<SetDTO> CreateSetAsync(CreateSetDTO createSetDto)
         {
+            if (createSetDto == null)
+                throw new ArgumentNullException(nameof(createSetDto));
             Set set = _mapper.Map<Set>(createSetDto);
             Set createdSet = await _setRepository.AddAsync(set);
             return _mapper.Map<SetDTO>(createdSet);
@@ -48,6 +52,10 @@ namespace Darts_Score_Management.Services
 
         public async Task<SetDTO> EndSetAsync(int id, int winnerId)
         {
+            if (id <= 0)
+                throw new ArgumentException("Set ID must be a positive number.", nameof(id));
+            if (winnerId <= 0)
+                throw new ArgumentException("Winner ID must be a positive number.", nameof(winnerId));
             Set set = await _setRepository.GetByIdAsync(id);
             if (set == null)
                 throw new KeyNotFoundException($"Set with id {id} not found");
@@ -59,6 +67,8 @@ namespace Darts_Score_Management.Services
 
         public async Task<IEnumerable<SetDTO>> GetSetsByGameIdAsync(int gameId)
         {
+            if (gameId <= 0)
+                throw new ArgumentException("Game ID must be a positive number.", nameof(gameId));
             IEnumerable<Set> sets = await _setRepository.GetSetsForGameAsync(gameId);
             List<SetDTO> result = new List<SetDTO>();
 

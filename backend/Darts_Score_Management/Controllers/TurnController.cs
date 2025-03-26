@@ -26,13 +26,13 @@ namespace Darts_Score_Management.Controllers
                 var turn = await _turnService.GetTurnByIdAsync(id);
                 return Ok(turn);
             }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(new ProblemDetails { Status = 400, Title = "Invalid Argument", Detail = ex.Message });
+            }
             catch (KeyNotFoundException ex)
             {
                 return NotFound(ex.Message);
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, $"Internal server error: {ex.Message}");
             }
         }
 

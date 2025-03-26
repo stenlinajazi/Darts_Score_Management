@@ -20,8 +20,15 @@ namespace Darts_Score_Management.Controllers
         [HttpGet("set/{setId}")]  
         public async Task<ActionResult<IEnumerable<LegDTO>>> GetLegsBySet(int setId)
         {
-            var legs = await _legService.GetLegsBySetIdAsync(setId);
-            return Ok(legs);
+            try
+            {
+                var legs = await _legService.GetLegsBySetIdAsync(setId);
+                return Ok(legs);
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(new ProblemDetails { Status = 400, Title = "Invalid Argument", Detail = ex.Message });
+            }
         }
 
 
@@ -29,11 +36,19 @@ namespace Darts_Score_Management.Controllers
         [ApiExplorerSettings(IgnoreApi = true)]
         public async Task<ActionResult<Leg>> GetLeg(int id)
         {
-            var leg = await _legService.GetLegByIdAsync(id);
-            if (leg == null)
-              return NotFound();
-                    
-            return Ok(leg);
+            try
+            {
+                var leg = await _legService.GetLegByIdAsync(id);
+                return Ok(leg);
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(new ProblemDetails { Status = 400, Title = "Invalid Argument", Detail = ex.Message });
+            }
+            catch (KeyNotFoundException)
+            {
+                return NotFound();
+            }
         }
 
         [HttpPost]
@@ -45,9 +60,9 @@ namespace Darts_Score_Management.Controllers
                 var leg = await _legService.CreateLegAsync(createLegDto);
                 return CreatedAtAction(nameof(GetLeg), new { id = leg.Id }, leg);
             }
-            catch (Exception ex)
+            catch (ArgumentNullException ex)
             {
-                return BadRequest(ex.Message);
+                return BadRequest(new ProblemDetails { Status = 400, Title = "Invalid Argument", Detail = ex.Message });
             }
         }
 
@@ -61,13 +76,13 @@ namespace Darts_Score_Management.Controllers
                 var leg = await _legService.EndLegAsync(id, winnerId);
                 return Ok(leg);
             }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(new ProblemDetails { Status = 400, Title = "Invalid Argument", Detail = ex.Message });
+            }
             catch (KeyNotFoundException)
             {
                 return NotFound();
-            }
-            catch (Exception ex)
-            {
-                return BadRequest(ex.Message);
             }
         }
     }

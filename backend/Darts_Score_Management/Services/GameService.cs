@@ -10,6 +10,7 @@ using Darts_Score_Management.DTOs.Turn;
 using Darts_Score_Management.Enums;
 using Darts_Score_Management.Interfaces.RepositoryInterfaces;
 using Darts_Score_Management.Interfaces.ServiceInterfaces;
+using Darts_Score_Management.Repositories;
 using System.ComponentModel.DataAnnotations;
 
 namespace Darts_Score_Management.Services
@@ -21,15 +22,17 @@ namespace Darts_Score_Management.Services
         private readonly ISetService _setService;
         private readonly ILegService _legService;
         private readonly ITurnService _turnService;
+        private readonly IPlayerRepository _playerRepository;
 
         public GameService(IGameRepository gameRepository, IMapper mapper, ISetService setService,
-            ILegService legService, ITurnService turnService)
+            ILegService legService, ITurnService turnService, IPlayerRepository playerRepository)
         {
             _gameRepository = gameRepository;
             _mapper = mapper;
             _setService = setService;
             _legService = legService;
             _turnService = turnService;
+            _playerRepository = playerRepository;
         }
          public async Task<IEnumerable<GameListResponseDTO>> GetAllSummariesAsync()
          {
@@ -38,18 +41,32 @@ namespace Darts_Score_Management.Services
 
         public async Task<GameDTO> GetGameByIdAsync(int id)
         {
+            if (id <= 0)
+                throw new ArgumentException("Game ID must be a positive number.", nameof(id));
+
             Game game = await _gameRepository.GetGameWithDetailsAsync(id);
+            if (game == null)
+                throw new KeyNotFoundException($"Game with ID {id} not found");
+
             return _mapper.Map<GameDTO>(game);
         }
 
         public async Task<GameDetailsResponseDTO> GetGameWithDetailsAndHistoryAsync(int id)
         {
+            if (id <= 0)
+                throw new ArgumentException("Game ID must be a positive number.", nameof(id));
+
             return await _gameRepository.GetGameWithDetailsAndHistoryAsync(id);
         }
 
         public async Task<IEnumerable<PlayerGameSummaryDTO>> GetPlayerGamesAsync(int playerId)
         {
-            return await _gameRepository.GetPlayerGamesAsync(playerId);
+            if (playerId <= 0)
+                throw new ArgumentException("Player ID must be a positive number.", nameof(playerId));
+            var games = await _gameRepository.GetPlayerGamesAsync(playerId);
+            if (games == null || !games.Any())
+                throw new KeyNotFoundException($"No games found for player with ID {playerId}");
+            return games;
         }
 
         public async Task<GameDTO> CreateGameAsync(CreateGameDTO createGameDto)
@@ -60,6 +77,20 @@ namespace Darts_Score_Management.Services
                 throw new ValidationException("Starting score must be 301, 501, or 701");
             if (!Enum.IsDefined(typeof(GameType), createGameDto.Type))
                 throw new ValidationException("Game type must be a valid GameType (X01 or Cricket).");
+
+            if (createGameDto.PlayerIds == null || !createGameDto.PlayerIds.Any())
+                throw new ValidationException("At least one player ID must be provided.");
+            var invalidPlayerIds = new List<int>();
+            foreach (var playerId in createGameDto.PlayerIds)
+            {
+                if (playerId <= 0)
+                    throw new ValidationException($"Player ID {playerId} must be a positive number.");
+                var player = await _playerRepository.GetByIdAsync(playerId);
+                if (player == null)
+                    invalidPlayerIds.Add(playerId);
+            }
+            if (invalidPlayerIds.Any())
+                throw new ValidationException($"One or more player IDs do not exist: {string.Join(", ", invalidPlayerIds)}.");
 
             Game game = _mapper.Map<Game>(createGameDto);
             game.StartedAt = DateTime.UtcNow;
@@ -88,11 +119,22 @@ namespace Darts_Score_Management.Services
 
         public async Task DeleteGameAsync(int id)
         {
+            if (id <= 0)
+                throw new ArgumentException("Game ID must be a positive number.", nameof(id));
+            var game = await _gameRepository.GetByIdAsync(id);
+            if (game == null)
+                throw new KeyNotFoundException($"Game with ID {id} not found");
+
             await _gameRepository.DeleteAsync(id);
         }
 
         public async Task<GameDTO> EndGameAsync(int id, int winnerId)
         {
+            if (id <= 0)
+                throw new ArgumentException("Game ID must be a positive number.", nameof(id));
+
+            if (winnerId <= 0)
+                throw new ArgumentException("Winner ID must be a positive number.", nameof(winnerId));
             Game game = await _gameRepository.GetGameWithDetailsAsync(id);
             if (game == null)
                 throw new KeyNotFoundException($"Game with id {id} not found");

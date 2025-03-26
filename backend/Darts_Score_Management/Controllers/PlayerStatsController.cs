@@ -23,13 +23,13 @@ namespace Darts_Score_Management.Controllers
                 var stats = await _statisticService.GetPlayerStatsAsync(playerId);
                 return Ok(stats);
             }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(new ProblemDetails { Status = 400, Title = "Invalid Argument", Detail = ex.Message });
+            }
             catch (KeyNotFoundException ex)
             {
                 return NotFound(new { message = ex.Message });
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, new { message = "An error occurred while retrieving player stats.", error = ex.Message });
             }
         }
     }

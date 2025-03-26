@@ -18,12 +18,22 @@ namespace Darts_Score_Management.Services
 
         public async Task<GamePlayerDTO> GetGamePlayerByIdAsync(int id)
         {
-           return await _gamePlayerRepository.GetGamePlayerAsync(id);      
+            if (id <= 0)
+                throw new ArgumentException("ID must be a positive number.", nameof(id));
+            var gamePlayer = await _gamePlayerRepository.GetGamePlayerAsync(id);
+            if (gamePlayer == null)
+                throw new KeyNotFoundException($"Game player with ID {id} not found.");
+            return gamePlayer;
         }
 
         public async Task<IEnumerable<GamePlayerDTO>> GetGamePlayersByGameIdAsync(int gameId)
         {
-            return await  _gamePlayerRepository.GetGamePlayersForGameAsync(gameId);
+            if (gameId <= 0)
+                throw new ArgumentException("Game ID must be a positive number.", nameof(gameId));
+            var gamePlayers = await _gamePlayerRepository.GetGamePlayersForGameAsync(gameId);
+            if (gamePlayers == null || !gamePlayers.Any())
+                throw new KeyNotFoundException($"No game players found for game with ID {gameId}.");
+            return gamePlayers;
         }
     }
 }

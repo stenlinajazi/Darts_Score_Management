@@ -16,6 +16,9 @@ builder.Services.AddDbContext<AppDbContext>((options) =>
    
 });
 
+// Register middleware
+builder.Services.AddTransient<ExceptionHandlingMiddleware>();
+
 // Register repositories
 builder.Services.AddScoped<IPlayerRepository, PlayerRepository>();
 builder.Services.AddScoped<IGameRepository, GameRepository>();

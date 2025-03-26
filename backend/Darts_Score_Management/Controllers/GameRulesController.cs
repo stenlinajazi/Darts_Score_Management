@@ -25,21 +25,34 @@ namespace Darts_Score_Management.Controllers
         [HttpPost("throws")]
         public async Task<ActionResult<GameStateDTO>> ProcessTurn([FromBody] List<CreateThrowDTO> throws, [FromQuery] int? gameId = null)
         {
-            if (throws == null || throws.Count > 3)
-                throw new GameRuleViolationException("A turn must contain 0 to 3 throws", "ThrowCount");
-
-            int legId;
-            if (gameId.HasValue)
+            try
             {
-                legId = await _gameService.GetActiveLegIdByGameIdAsync(gameId.Value);
+                if (throws == null || throws.Count > 3)
+                    return BadRequest(new ProblemDetails { Status = 400, Title = "Invalid Throws", Detail = "A turn must contain 0 to 3 throws" });
+                int legId;
+                if (gameId.HasValue)
+                {
+                    legId = await _gameService.GetActiveLegIdByGameIdAsync(gameId.Value);
+                }
+                else
+                {
+                    legId = await _gameService.GetActiveLegIdAsync();
+                }
+                var gameState = await _gameRulesEngine.ProcessTurnForLeg(legId, throws);
+                return Ok(gameState);
             }
-            else
+            catch (ArgumentException ex)
             {
-                legId = await _gameService.GetActiveLegIdAsync();
+                return BadRequest(new ProblemDetails { Status = 400, Title = "Invalid Argument", Detail = ex.Message });
             }
-
-            var gameState = await _gameRulesEngine.ProcessTurnForLeg(legId, throws);
-            return Ok(gameState);
+            catch (GameRuleViolationException ex)
+            {
+                return BadRequest(new ProblemDetails { Status = 400, Title = "Game Rule Violation", Detail = ex.Message });
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return NotFound(new ProblemDetails { Status = 404, Title = "Not Found", Detail = ex.Message });
+            }
         }
     }
 }

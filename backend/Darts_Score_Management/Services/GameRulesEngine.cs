@@ -58,6 +58,10 @@ namespace Darts_Score_Management.Services
         //Processes a turn (up to 3 throws), validates it, updates the game state, and checks for completion (leg, set, game)
         public async Task<GameStateDTO> ProcessTurnForLeg(int legId, List<CreateThrowDTO> throws)
         {
+            if (legId <= 0)
+                throw new ArgumentException("Leg ID must be a positive number.", nameof(legId));
+            if (throws == null)
+                throw new ArgumentNullException(nameof(throws));
             using var transaction = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled);
             try
             {

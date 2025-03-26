@@ -40,7 +40,9 @@ const GamesListWrapper = async (root) => {
       const games = await GamesList(
         (gameId) => GameDetailsModal(gameId, root),
         renderGames
-      );
+      ); //defining  onDetailsClick, onDeleteClick event handlers
+      //Handle showing game details when the "Details" button is clicked --> onDetailsClick
+      //Refresh or update the games list after a game is deleted -->onDeleteClick
       gamesTableBody.innerHTML = "";
       games.forEach((gameRow) => gamesTableBody.appendChild(gameRow));
     } catch (error) {

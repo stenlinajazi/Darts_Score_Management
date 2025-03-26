@@ -23,13 +23,13 @@ namespace Darts_Score_Management.Controllers
                 var stats = await _statisticService.GetLegStatsAsync(legId, gamePlayerId);
                 return Ok(stats);
             }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(new ProblemDetails { Status = 400, Title = "Invalid Argument", Detail = ex.Message });
+            }
             catch (KeyNotFoundException ex)
             {
                 return NotFound(new { message = ex.Message });
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, new { message = "An error occurred while retrieving leg stats.", error = ex.Message });
             }
         }
 
@@ -42,13 +42,13 @@ namespace Darts_Score_Management.Controllers
                 var stats = await _statisticService.GetSetStatsAsync(setId, gamePlayerId);
                 return Ok(stats);
             }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(new ProblemDetails { Status = 400, Title = "Invalid Argument", Detail = ex.Message });
+            }
             catch (KeyNotFoundException ex)
             {
                 return NotFound(new { message = ex.Message });
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, new { message = "An error occurred while retrieving set stats.", error = ex.Message });
             }
         }
 
@@ -61,13 +61,13 @@ namespace Darts_Score_Management.Controllers
                 var stats = await _statisticService.GetGameStatsAsync(gameId, gamePlayerId);
                 return Ok(stats);
             }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(new ProblemDetails { Status = 400, Title = "Invalid Argument", Detail = ex.Message });
+            }
             catch (KeyNotFoundException ex)
             {
                 return NotFound(new { message = ex.Message });
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, new { message = "An error occurred while retrieving game stats.", error = ex.Message });
             }
         }
     }

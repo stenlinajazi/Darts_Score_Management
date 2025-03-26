@@ -20,19 +20,34 @@ namespace Darts_Score_Management.Controllers
         [HttpGet("{id}")]
         public async Task<ActionResult<SetDTO>> GetSet(int id)
         {
-            var set = await _setService.GetSetByIdAsync(id);
-            if (set == null)
+            try
+            {
+                var set = await _setService.GetSetByIdAsync(id);
+                return Ok(set);
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(new ProblemDetails { Status = 400, Title = "Invalid Argument", Detail = ex.Message });
+            }
+            catch (KeyNotFoundException)
+            {
                 return NotFound();
-
-            return Ok(set);
+            }
         }
 
        
         [HttpGet("game/{gameId}")]
         public async Task<ActionResult<IEnumerable<SetDTO>>> GetSetsByGame(int gameId)
         {
-            var sets = await _setService.GetSetsByGameIdAsync(gameId);
-            return Ok(sets);
+            try
+            {
+                var sets = await _setService.GetSetsByGameIdAsync(gameId);
+                return Ok(sets);
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(new ProblemDetails { Status = 400, Title = "Invalid Argument", Detail = ex.Message });
+            }
         }
 
        
@@ -45,9 +60,9 @@ namespace Darts_Score_Management.Controllers
                 var set = await _setService.CreateSetAsync(createSetDto);
                 return CreatedAtAction(nameof(GetSet), new { id = set.Id }, set);
             }
-            catch (Exception ex)
+            catch (ArgumentNullException ex)
             {
-                return BadRequest(ex.Message);
+                return BadRequest(new ProblemDetails { Status = 400, Title = "Invalid Argument", Detail = ex.Message });
             }
         }
 
@@ -61,13 +76,13 @@ namespace Darts_Score_Management.Controllers
                 var set = await _setService.EndSetAsync(id, winnerId);
                 return Ok(set);
             }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(new ProblemDetails { Status = 400, Title = "Invalid Argument", Detail = ex.Message });
+            }
             catch (KeyNotFoundException)
             {
                 return NotFound();
-            }
-            catch (Exception ex)
-            {
-                return BadRequest(ex.Message);
             }
         }
     }

@@ -3,6 +3,7 @@ using Darts_Score_Management.DTOs.Player;
 using Darts_Score_Management.Interfaces.ServiceInterfaces;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using System.ComponentModel.DataAnnotations;
 
 namespace Darts_Score_Management.Controllers
 {
@@ -20,8 +21,15 @@ namespace Darts_Score_Management.Controllers
         [HttpGet]
         public async Task<ActionResult<IEnumerable<PlayerDTO>>> GetPlayers()
         {
-            var players = await _playerService.GetAllPlayersAsync();
-            return Ok(players);
+            try
+            {
+                var players = await _playerService.GetAllPlayersAsync();
+                return Ok(players);
+            }
+            catch (KeyNotFoundException)
+            {
+                return NotFound();
+            }
         }
 
         
@@ -36,13 +44,19 @@ namespace Darts_Score_Management.Controllers
         [HttpGet("{id}")]
         public async Task<ActionResult<PlayerDTO>> GetPlayer(int id)
         {
-            if (id <= 0)
+            try
             {
-                ModelState.AddModelError("ID", "ID must be a positive number.");
-                return BadRequest(ModelState);
+                var player = await _playerService.GetPlayerByIdAsync(id);
+                return Ok(player);
             }
-            var player = await _playerService.GetPlayerByIdAsync(id);
-            return Ok(player);
+            catch (ArgumentException ex)
+            {
+                return BadRequest(new ProblemDetails { Status = 400, Title = "Invalid Argument", Detail = ex.Message });
+            }
+            catch (KeyNotFoundException)
+            {
+                return NotFound();
+            }
         }
 
         //[HttpGet("{id}/stats")]
@@ -64,8 +78,19 @@ namespace Darts_Score_Management.Controllers
         [HttpPost]
         public async Task<ActionResult<PlayerDTO>> CreatePlayer(UpsertPlayerDTO createPlayerDto)
         {
-            var player = await _playerService.CreatePlayerAsync(createPlayerDto);
-            return CreatedAtAction(nameof(GetPlayer), new { id = player.Id }, player);
+            try
+            {
+                var player = await _playerService.CreatePlayerAsync(createPlayerDto);
+                return CreatedAtAction(nameof(GetPlayer), new { id = player.Id }, player);
+            }
+            catch (ArgumentNullException ex)
+            {
+                return BadRequest(new ProblemDetails { Status = 400, Title = "Invalid Argument", Detail = ex.Message });
+            }
+            catch (ValidationException ex)
+            {
+                return BadRequest(new ProblemDetails { Status = 400, Title = "Validation Error", Detail = ex.Message });
+            }
         }
 
       
@@ -76,6 +101,14 @@ namespace Darts_Score_Management.Controllers
             {
                 var player = await _playerService.UpdatePlayerAsync(id, upsertPlayerDto);
                 return Ok(player);
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(new ProblemDetails { Status = 400, Title = "Invalid Argument", Detail = ex.Message });
+            }
+            catch (ValidationException ex)
+            {
+                return BadRequest(new ProblemDetails { Status = 400, Title = "Validation Error", Detail = ex.Message });
             }
             catch (KeyNotFoundException)
             {
@@ -91,6 +124,10 @@ namespace Darts_Score_Management.Controllers
             {
                 await _playerService.DeletePlayerAsync(id);
                 return NoContent();
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(new ProblemDetails { Status = 400, Title = "Invalid Argument", Detail = ex.Message });
             }
             catch (KeyNotFoundException)
             {

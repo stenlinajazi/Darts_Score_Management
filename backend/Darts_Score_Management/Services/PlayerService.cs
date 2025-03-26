@@ -3,6 +3,7 @@ using Darts_Score_Management.Data.Models;
 using Darts_Score_Management.DTOs.Player;
 using Darts_Score_Management.Interfaces.RepositoryInterfaces;
 using Darts_Score_Management.Interfaces.ServiceInterfaces;
+using Darts_Score_Management.Repositories;
 using System.ComponentModel.DataAnnotations;
 using System.Numerics;
 
@@ -21,6 +22,8 @@ namespace Darts_Score_Management.Services
 
         public async Task<PlayerDTO> GetPlayerByIdAsync(int id)
         {
+            if (id <= 0)
+                throw new ArgumentException("Player ID must be a positive number.", nameof(id));
             Player player = await _playerRepository.GetByIdAsync(id);
             if (player == null)
                 throw new KeyNotFoundException($"Player with Id {id} was not found.");
@@ -54,6 +57,9 @@ namespace Darts_Score_Management.Services
 
         public async Task<PlayerDTO> UpdatePlayerAsync(int id, UpsertPlayerDTO upsertplayerDto)
         {
+            if (id <= 0)
+                throw new ArgumentException("Player ID must be a positive number.", nameof(id));
+
             if (upsertplayerDto == null)
                 throw new ArgumentNullException(nameof(upsertplayerDto));
 
@@ -72,9 +78,13 @@ namespace Darts_Score_Management.Services
 
         public async Task DeletePlayerAsync(int id)
         {
+            if (id <= 0)
+                throw new ArgumentException("Player ID must be a positive number.", nameof(id));
+
             var player = await _playerRepository.GetByIdAsync(id);
             if (player == null)
                 throw new KeyNotFoundException($"Player with Id {id} was not found.");
+
             await _playerRepository.DeleteAsync(id);
         }
 
