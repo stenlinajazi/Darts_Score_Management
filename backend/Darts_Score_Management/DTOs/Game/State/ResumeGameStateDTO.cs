@@ -16,5 +16,6 @@ namespace Darts_Score_Management.DTOs.Game.State
         public int CurrentSetNumber { get; set; }
         public int CurrentLegNumber { get; set; }
         public Dictionary<int, int> SetScores { get; set; } // PlayerId -> Sets Won
+        public Dictionary<int, Dictionary<int, int>> LegScores { get; set; } // SetNumber -> (PlayerId -> Legs Won)
     }
 }

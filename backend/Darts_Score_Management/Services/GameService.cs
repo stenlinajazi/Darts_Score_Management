@@ -267,6 +267,16 @@ namespace Darts_Score_Management.Services
                     gp => game.Sets.Count(s => s.WinnerPlayerId.HasValue && s.WinnerPlayerId.Value == gp.PlayerId)
                 );
 
+            var legScores = game.Sets
+                .ToDictionary(
+                    s => s.SetNumber,
+                    s => game.GamePlayers
+                        .ToDictionary(
+                            gp => gp.PlayerId,
+                            gp => s.Legs.Count(l => l.WinnerPlayerId.HasValue && l.WinnerPlayerId.Value == gp.PlayerId)
+                        )
+                );
+
             var players = game.GamePlayers
                 .OrderBy(gp => gp.TurnOrder)
                 .Select(async gp =>
@@ -307,7 +317,8 @@ namespace Darts_Score_Management.Services
                 LegsPerSet = game.Settings.LegsPerSet,
                 CurrentSetNumber = activeSet.SetNumber,
                 CurrentLegNumber = activeLeg.LegNumber,
-                SetScores = setScores
+                SetScores = setScores,
+                LegScores = legScores
             };
         }
 
