@@ -260,6 +260,13 @@ namespace Darts_Score_Management.Services
             var activeLeg = gameData.ActiveLeg;
             var lastTurn = gameData.LastTurn;
 
+            var activeSet = game.Sets.First(s => s.Legs.Contains(activeLeg));
+            var setScores = game.GamePlayers
+                .ToDictionary(
+                    gp => gp.PlayerId,
+                    gp => game.Sets.Count(s => s.WinnerPlayerId.HasValue && s.WinnerPlayerId.Value == gp.PlayerId)
+                );
+
             var players = game.GamePlayers
                 .OrderBy(gp => gp.TurnOrder)
                 .Select(async gp =>
@@ -295,7 +302,12 @@ namespace Darts_Score_Management.Services
                 Players = players,
                 ActivePlayerIndex = activePlayerIndex,
                 CurrentThrows = currentThrows,
-                Message = "Game resumed successfully"
+                Message = "Game resumed successfully",
+                SetsToWin = game.Settings.SetsToWin,
+                LegsPerSet = game.Settings.LegsPerSet,
+                CurrentSetNumber = activeSet.SetNumber,
+                CurrentLegNumber = activeLeg.LegNumber,
+                SetScores = setScores
             };
         }
 

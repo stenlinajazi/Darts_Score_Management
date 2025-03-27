@@ -11,5 +11,10 @@ namespace Darts_Score_Management.DTOs.Game.State
         public List<CreateThrowDTO> CurrentThrows { get; set; } 
         public string Message { get; set; }
 
+        public int SetsToWin { get; set; }
+        public int LegsPerSet { get; set; }
+        public int CurrentSetNumber { get; set; }
+        public int CurrentLegNumber { get; set; }
+        public Dictionary<int, int> SetScores { get; set; } // PlayerId -> Sets Won
     }
 }

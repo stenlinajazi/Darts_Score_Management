@@ -303,6 +303,8 @@ namespace Darts_Score_Management.Repositories
                 .AsNoTracking()
                 .Include(g => g.GamePlayers)
                     .ThenInclude(gp => gp.Player)
+                .Include(g => g.Sets)
+                    .ThenInclude(s => s.Legs)
                 .FirstOrDefaultAsync(g => g.Id == gameId);
 
             if (game == null)
@@ -311,12 +313,14 @@ namespace Darts_Score_Management.Repositories
             if (game.IsComplete)
                 throw new InvalidOperationException("Cannot resume a completed game");
 
-            var activeLeg = await _context.Legs
-                .AsNoTracking()
-                .Where(l => l.Set.GameId == gameId && !l.WinnerPlayerId.HasValue)
-                .OrderBy(l => l.Set.SetNumber)
-                .ThenBy(l => l.LegNumber)
-                .FirstOrDefaultAsync();
+            var activeSet = game.Sets
+                 .Where(s => !s.WinnerPlayerId.HasValue)
+                 .OrderBy(s => s.SetNumber)
+                 .FirstOrDefault();
+            var activeLeg = activeSet?.Legs
+                .Where(l => !l.WinnerPlayerId.HasValue)
+                .OrderBy(l => l.LegNumber)
+                .FirstOrDefault();
 
             if (activeLeg == null)
                 throw new InvalidOperationException($"No active leg found in game with ID {gameId}");
