@@ -295,5 +295,45 @@ namespace Darts_Score_Management.Repositories
 
             return activeLeg;
         }
+
+
+        public async Task<ResumeGameData> GetResumeGameDataAsync(int gameId)
+        {
+            var game = await _context.Games
+                .AsNoTracking()
+                .Include(g => g.GamePlayers)
+                    .ThenInclude(gp => gp.Player)
+                .FirstOrDefaultAsync(g => g.Id == gameId);
+
+            if (game == null)
+                throw new KeyNotFoundException($"Game with ID {gameId} not found");
+
+            if (game.IsComplete)
+                throw new InvalidOperationException("Cannot resume a completed game");
+
+            var activeLeg = await _context.Legs
+                .AsNoTracking()
+                .Where(l => l.Set.GameId == gameId && !l.WinnerPlayerId.HasValue)
+                .OrderBy(l => l.Set.SetNumber)
+                .ThenBy(l => l.LegNumber)
+                .FirstOrDefaultAsync();
+
+            if (activeLeg == null)
+                throw new InvalidOperationException($"No active leg found in game with ID {gameId}");
+ 
+            var lastTurn = await _context.Turns
+                .AsNoTracking()
+                .Include(t => t.Throws)
+                .Where(t => t.LegId == activeLeg.Id)
+                .OrderByDescending(t => t.TurnNumber)
+                .FirstOrDefaultAsync();
+
+            return new ResumeGameData
+            {
+                Game = game,
+                ActiveLeg = activeLeg,
+                LastTurn = lastTurn
+            };
+        }
     }
 }

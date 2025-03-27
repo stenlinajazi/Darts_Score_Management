@@ -14,5 +14,6 @@ namespace Darts_Score_Management.Interfaces.RepositoryInterfaces
         Task<IEnumerable<GameListResponseDTO>> GetAllSummariesAsync();
         Task<GameDetailsResponseDTO> GetGameWithDetailsAndHistoryAsync(int id);
         Task<int?> GetActiveLegIdForMostRecentGameAsync();
+        Task<ResumeGameData> GetResumeGameDataAsync(int gameId);
     }
 }

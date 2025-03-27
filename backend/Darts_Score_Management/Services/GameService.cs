@@ -3,9 +3,11 @@ using Darts_Score_Management.CustomExceptions;
 using Darts_Score_Management.Data.Models;
 using Darts_Score_Management.DTOs.Game.Core;
 using Darts_Score_Management.DTOs.Game.Response;
+using Darts_Score_Management.DTOs.Game.State;
 using Darts_Score_Management.DTOs.Game.Statistics;
 using Darts_Score_Management.DTOs.Leg;
 using Darts_Score_Management.DTOs.Set;
+using Darts_Score_Management.DTOs.Throw;
 using Darts_Score_Management.DTOs.Turn;
 using Darts_Score_Management.Enums;
 using Darts_Score_Management.Interfaces.RepositoryInterfaces;
@@ -245,6 +247,56 @@ namespace Darts_Score_Management.Services
                 throw new InvalidOperationException($"No active leg found in game with ID {gameId}.");
 
             return activeLeg.Id;
+        }
+
+        public async Task<ResumeGameStateDTO> GetResumeGameStateAsync(int gameId)
+        {
+            if (gameId <= 0)
+                throw new ArgumentException("Game ID must be a positive number.", nameof(gameId));
+
+            var gameData = await _gameRepository.GetResumeGameDataAsync(gameId);
+
+            var game = gameData.Game;
+            var activeLeg = gameData.ActiveLeg;
+            var lastTurn = gameData.LastTurn;
+
+            var players = game.GamePlayers
+                .OrderBy(gp => gp.TurnOrder)
+                .Select(async gp =>
+                {
+                    var lastPlayerTurnDto = await _turnService.GetLastTurnByPlayerAndLegAsync(gp.PlayerId, activeLeg.Id);
+                    var lastPlayerTurn = _mapper.Map<Turn>(lastPlayerTurnDto);
+                    return new ResumePlayerDTO
+                    {
+                        Id = gp.PlayerId,
+                        Name = gp.Player.Name,
+                        StartingScore = lastPlayerTurn?.EndingScore ?? game.StartingScore,
+                        RemainingScore = lastPlayerTurn?.EndingScore ?? game.StartingScore,
+                        PointsThisTurn = lastTurn?.PlayerId == gp.PlayerId ? lastTurn.TotalPoints : 0
+                    };
+                })
+                .Select(t => t.Result)
+                .ToList();
+
+            
+            int activePlayerIndex = lastTurn == null
+                ? 0
+                : (game.GamePlayers.OrderBy(gp => gp.TurnOrder).ToList().FindIndex(gp => gp.PlayerId == lastTurn.PlayerId) + 1) % players.Count;
+
+            var currentThrows = lastTurn?.Throws
+                .Where(t => !t.IsBusted)
+                .Select(t => new CreateThrowDTO { Segment = t.Segment, Multiplier = t.Multiplier })
+                .ToList() ?? new List<CreateThrowDTO>();
+
+            return new ResumeGameStateDTO
+            {
+                GameId = gameId,
+                StartingScore = game.StartingScore,
+                Players = players,
+                ActivePlayerIndex = activePlayerIndex,
+                CurrentThrows = currentThrows,
+                Message = "Game resumed successfully"
+            };
         }
 
     }

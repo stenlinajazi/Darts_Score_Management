@@ -1,5 +1,6 @@
 ﻿using Darts_Score_Management.DTOs.Game.Core;
 using Darts_Score_Management.DTOs.Game.Response;
+using Darts_Score_Management.DTOs.Game.State;
 using Darts_Score_Management.DTOs.Game.Statistics;
 using Darts_Score_Management.Interfaces.ServiceInterfaces;
 using Microsoft.AspNetCore.Http;
@@ -43,6 +44,30 @@ namespace Darts_Score_Management.Controllers
                 return NotFound();
             }
         }
+
+
+        [HttpGet("{gameId}/state")]
+        public async Task<ActionResult<ResumeGameStateDTO>> GetResumeGameState(int gameId)
+        {
+            try
+            {
+                var gameState = await _gameService.GetResumeGameStateAsync(gameId);
+                return Ok(gameState);
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(new ProblemDetails { Status = 400, Title = "Invalid Argument", Detail = ex.Message });
+            }
+            catch (KeyNotFoundException)
+            {
+                return NotFound();
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(new ProblemDetails { Status = 400, Title = "Invalid Operation", Detail = ex.Message });
+            }
+        }
+
 
         [HttpGet("player/{playerId}")]
         public async Task<ActionResult<IEnumerable<PlayerGameSummaryDTO>>> GetPlayerGames(int playerId)
