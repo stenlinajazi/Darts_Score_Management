@@ -47,9 +47,9 @@ const GameCard = (game, onDetailsClick, onDeleteClick) => {
   const resumeBtn = row.querySelector(".resume-btn");
   if (resumeBtn) {
     resumeBtn.addEventListener("click", () => {
-      const path = `/Darts_Frontend/play-game?gameId=${game.id}`;
+      const path = "/Darts_Frontend/play-game";
+      window.history.pushState({ gameId: game.id }, document.title, path);
       Router.router(path);
-      window.history.pushState({}, document.title, path);
     });
   }
 

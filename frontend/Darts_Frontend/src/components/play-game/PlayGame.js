@@ -2,7 +2,7 @@ import CreateGameModal from "../modal/CreateGameModal.js";
 import WinnerModal from "../modal/WinnerModal.js";
 import PlayerCard from "./PlayerCard.js";
 import ThrowsList from "./ThrowsList.js";
-import { submitThrows, fetchGameState } from "../../services/apiService.js"; // Added fetchGameState
+import { submitThrows, fetchGameState } from "../../services/apiService.js";
 import { MULTIPLIERS } from "../../services/gameService.js";
 
 const PlayGame = (root) => {
@@ -108,6 +108,34 @@ const PlayGame = (root) => {
     state.currentThrows = [];
     state.selectedSegment = null;
     state.selectedMultiplier = null;
+  };
+
+  const resumeGameState = async (gameId) => {
+    try {
+      const gameState = await fetchGameState(gameId);
+      state.gameId = gameState.gameId;
+      state.startingScore = gameState.startingScore;
+      state.players = gameState.players.map((player) => ({
+        id: player.id,
+        name: player.name,
+        startingScore: player.startingScore,
+        pointsThisTurn: player.pointsThisTurn,
+        remainingScore: player.remainingScore,
+        setsWon: gameState.setScores[player.id] || 0,
+        legsWon:
+          gameState.legScores[gameState.currentLegNumber]?.[player.id] || 0,
+      }));
+      state.activePlayerIndex = gameState.activePlayerIndex;
+      state.currentThrows = gameState.currentThrows || [];
+      state.selectedSegment = null;
+      state.selectedMultiplier = null;
+      render();
+      showMessage(gameState.message || "Game resumed successfully", "success");
+    } catch (error) {
+      showMessage(`Failed to resume game: ${error.message}`, "error");
+      state.gameId = null;
+      render();
+    }
   };
 
   const resetLegState = () => {
@@ -351,7 +379,12 @@ const PlayGame = (root) => {
       .addEventListener("click", removeLastThrow);
   };
 
-  render();
+  const historyState = window.history.state;
+  if (historyState && historyState.gameId) {
+    resumeGameState(historyState.gameId);
+  } else {
+    render();
+  }
 };
 
 export default PlayGame;
