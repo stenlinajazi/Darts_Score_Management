@@ -39,38 +39,10 @@ const PlayGame = (root) => {
       return;
     }
 
-    const legsWonInSet = [];
-    for (let leg = 1; leg <= state.legsPerSet; leg++) {
-      const legKey = leg.toString();
-      if (state.legScores[legKey]) {
-        Object.entries(state.legScores[legKey]).forEach(([playerId, legs]) => {
-          if (legs > 0) {
-            const player = state.players.find(
-              (p) => p.id === parseInt(playerId)
-            );
-            legsWonInSet.push(
-              `${player ? player.name : "Unknown"}: Leg ${leg}`
-            );
-          }
-        });
-      }
-    }
-    const legsWonText =
-      legsWonInSet.length > 0 ? legsWonInSet.join(", ") : "None";
-
     wrapper.innerHTML = `
     <div class="game-info">
       <h2>Play Game</h2>
-      <p>Set ${state.currentSetNumber} of ${state.setsToWin}, Leg ${
-      state.currentLegNumber
-    } of ${state.legsPerSet}</p>
-      <p>Sets Won: ${Object.entries(state.setScores)
-        .map(([playerId, sets]) => {
-          const player = state.players.find((p) => p.id === parseInt(playerId));
-          return `${player ? player.name : "Unknown"}: ${sets}`;
-        })
-        .join(", ")}</p>
-      <p>Legs Won in Set ${state.currentSetNumber}: ${legsWonText}</p>
+      <div class="game-progress">Set ${state.currentSetNumber} of ${state.setsToWin} - Leg ${state.currentLegNumber} of ${state.legsPerSet}</div>
     </div>
     <div id="players-container" class="players-container"></div>
     <div id="message-container"></div>
@@ -182,7 +154,7 @@ const PlayGame = (root) => {
           gameState.legScores[gameState.currentLegNumber]?.[player.id] || 0,
       }));
       state.activePlayerIndex = gameState.activePlayerIndex;
-      state.currentThrows = gameState.currentThrows || [];
+      state.currentThrows = [];
       state.selectedSegment = null;
       state.selectedMultiplier = null;
       state.setsToWin = gameState.setsToWin;
@@ -216,7 +188,7 @@ const PlayGame = (root) => {
     playersContainer.innerHTML = "";
     state.players.forEach((player, index) => {
       playersContainer.appendChild(
-        PlayerCard(player, index === state.activePlayerIndex)
+        PlayerCard(player, index === state.activePlayerIndex, state)
       );
     });
   };
