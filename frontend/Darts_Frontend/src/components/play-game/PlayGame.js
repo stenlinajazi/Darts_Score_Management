@@ -40,53 +40,46 @@ const PlayGame = (root) => {
     }
 
     wrapper.innerHTML = `
-    <div class="game-info">
-      <h2>Play Game</h2>
-      <div class="game-progress">Set ${state.currentSetNumber} of ${state.setsToWin} - Leg ${state.currentLegNumber} of ${state.legsPerSet}</div>
-    </div>
-    <div id="players-container" class="players-container"></div>
-    <div id="message-container"></div>
-    <div class="throws-container">
-      <h3>Current Throws</h3>
-      <div id="throws-list"></div>
-    </div>
-    <h3>Select Segment</h3>
-    <div class="score-grid">
-      <button class="segment-btn miss" data-segment="0">Miss</button>
-      <button class="segment-btn" data-segment="1">1</button>
-      <button class="segment-btn" data-segment="2">2</button>
-      <button class="segment-btn" data-segment="3">3</button>
-      <button class="segment-btn" data-segment="4">4</button>
-      <button class="segment-btn" data-segment="5">5</button>
-      <button class="segment-btn" data-segment="6">6</button>
-      <button class="segment-btn" data-segment="7">7</button>
-      <button class="segment-btn" data-segment="8">8</button>
-      <button class="segment-btn" data-segment="9">9</button>
-      <button class="segment-btn" data-segment="10">10</button>
-      <button class="segment-btn" data-segment="11">11</button>
-      <button class="segment-btn" data-segment="12">12</button>
-      <button class="segment-btn" data-segment="13">13</button>
-      <button class="segment-btn" data-segment="14">14</button>
-      <button class="segment-btn" data-segment="15">15</button>
-      <button class="segment-btn" data-segment="16">16</button>
-      <button class="segment-btn" data-segment="17">17</button>
-      <button class="segment-btn" data-segment="18">18</button>
-      <button class="segment-btn" data-segment="19">19</button>
-      <button class="segment-btn" data-segment="20">20</button>
-      <button class="segment-btn bull" data-segment="25">Bull</button>
-    </div>
-    <h3>Select Multiplier</h3>
-    <div class="multiplier-grid">
-      <button class="multiplier-btn" data-multiplier="1">Single</button>
-      <button class="multiplier-btn" data-multiplier="2">Double</button>
-      <button class="multiplier-btn" data-multiplier="3">Triple</button>
-    </div>
-    <div class="actions">
-      <button id="back-btn" class="btn btn-secondary">Back</button>
-      <button id="clear-btn" class="btn btn-secondary">Clear</button>
-      <button id="submit-turn-btn" class="btn btn-primary" disabled>Submit Turn</button>
-    </div>
-  `;
+      <div class="game-info">
+        <h2>Play Game</h2>
+        <div class="game-progress">Set ${state.currentSetNumber} of ${
+      state.setsToWin
+    } - Leg ${state.currentLegNumber} of ${state.legsPerSet}</div>
+      </div>
+      <div id="players-container" class="players-container"></div>
+      <div id="message-container"></div>
+      <div class="throws-container">
+        <h3>Current Throws</h3>
+        <div id="throws-list"></div>
+      </div>
+      <div class="game-controls">
+        <h3>Select Segment</h3>
+        <div class="score-grid">
+          ${Array.from({ length: 20 }, (_, i) => i + 1)
+            .map(
+              (segment) => `
+            <button class="segment-btn" data-segment="${segment}">${segment}</button>
+          `
+            )
+            .join("")}
+        </div>
+        <div class="board-actions">
+          <button class="segment-btn miss" data-segment="0">Miss</button>
+          <button class="segment-btn bull" data-segment="25">Bull</button>
+          <div class="actions">
+            <button id="back-btn" class="btn btn-secondary">Back</button>
+            <button id="clear-btn" class="btn btn-secondary">Clear</button>
+            <button id="submit-turn-btn" class="btn btn-primary" disabled>Submit Turn</button>
+          </div>
+        </div>
+        <h3>Select Multiplier</h3>
+        <div class="multiplier-grid">
+          <button class="multiplier-btn" data-multiplier="1">Single</button>
+          <button class="multiplier-btn" data-multiplier="2">Double</button>
+          <button class="multiplier-btn" data-multiplier="3">Triple</button>
+        </div>
+      </div>
+    `;
     attachEventListeners();
     renderPlayers();
     renderThrows();
