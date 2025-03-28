@@ -14,6 +14,12 @@ const PlayGame = (root) => {
     selectedSegment: null,
     selectedMultiplier: null,
     currentThrows: [],
+    setsToWin: null,
+    legsPerSet: null,
+    currentSetNumber: 1,
+    currentLegNumber: 1,
+    setScores: {},
+    legScores: {},
   };
 
   const wrapper = document.createElement("div");
@@ -33,7 +39,39 @@ const PlayGame = (root) => {
       return;
     }
 
+    const legsWonInSet = [];
+    for (let leg = 1; leg <= state.legsPerSet; leg++) {
+      const legKey = leg.toString();
+      if (state.legScores[legKey]) {
+        Object.entries(state.legScores[legKey]).forEach(([playerId, legs]) => {
+          if (legs > 0) {
+            const player = state.players.find(
+              (p) => p.id === parseInt(playerId)
+            );
+            legsWonInSet.push(
+              `${player ? player.name : "Unknown"}: Leg ${leg}`
+            );
+          }
+        });
+      }
+    }
+    const legsWonText =
+      legsWonInSet.length > 0 ? legsWonInSet.join(", ") : "None";
+
     wrapper.innerHTML = `
+    <div class="game-info">
+      <h2>Play Game</h2>
+      <p>Set ${state.currentSetNumber} of ${state.setsToWin}, Leg ${
+      state.currentLegNumber
+    } of ${state.legsPerSet}</p>
+      <p>Sets Won: ${Object.entries(state.setScores)
+        .map(([playerId, sets]) => {
+          const player = state.players.find((p) => p.id === parseInt(playerId));
+          return `${player ? player.name : "Unknown"}: ${sets}`;
+        })
+        .join(", ")}</p>
+      <p>Legs Won in Set ${state.currentSetNumber}: ${legsWonText}</p>
+    </div>
     <div id="players-container" class="players-container"></div>
     <div id="message-container"></div>
     <div class="throws-container">
@@ -108,6 +146,24 @@ const PlayGame = (root) => {
     state.currentThrows = [];
     state.selectedSegment = null;
     state.selectedMultiplier = null;
+    state.setsToWin = newGame.settings?.setsToWin || 1;
+    state.legsPerSet = newGame.settings?.legsPerSet || 1;
+    state.currentSetNumber = 1;
+    state.currentLegNumber = 1;
+    state.setScores = newGame.players.reduce((acc, player) => {
+      acc[player.player.id] = 0;
+      return acc;
+    }, {});
+    state.legScores = {
+      1: newGame.players.reduce((acc, player) => {
+        acc[player.player.id] = 0;
+        return acc;
+      }, {}),
+    };
+    console.log("Initialized state:", {
+      setsToWin: state.setsToWin,
+      legsPerSet: state.legsPerSet,
+    });
   };
 
   const resumeGameState = async (gameId) => {
@@ -118,7 +174,7 @@ const PlayGame = (root) => {
       state.players = gameState.players.map((player) => ({
         id: player.id,
         name: player.name,
-        startingScore: player.startingScore,
+        startingScore: gameState.startingScore,
         pointsThisTurn: player.pointsThisTurn,
         remainingScore: player.remainingScore,
         setsWon: gameState.setScores[player.id] || 0,
@@ -129,6 +185,12 @@ const PlayGame = (root) => {
       state.currentThrows = gameState.currentThrows || [];
       state.selectedSegment = null;
       state.selectedMultiplier = null;
+      state.setsToWin = gameState.setsToWin;
+      state.legsPerSet = gameState.legsPerSet;
+      state.currentSetNumber = gameState.currentSetNumber;
+      state.currentLegNumber = gameState.currentLegNumber;
+      state.setScores = gameState.setScores || {};
+      state.legScores = gameState.legScores || {};
       render();
       showMessage(gameState.message || "Game resumed successfully", "success");
     } catch (error) {
@@ -145,7 +207,6 @@ const PlayGame = (root) => {
     state.players.forEach((player) => {
       player.remainingScore = state.startingScore;
       player.pointsThisTurn = 0;
-      player.startingScore = state.startingScore;
     });
   };
 
@@ -305,7 +366,6 @@ const PlayGame = (root) => {
       const currentPlayer = state.players[state.activePlayerIndex];
 
       if (currentPlayer) {
-        currentPlayer.startingScore = currentPlayer.remainingScore;
         currentPlayer.pointsThisTurn = pointsThisTurn;
         currentPlayer.remainingScore = data.remainingScore;
       }
@@ -326,21 +386,40 @@ const PlayGame = (root) => {
           render();
         });
       } else if (data.setComplete) {
-        currentPlayer.setsWon = (currentPlayer.setsWon || 0) + 1;
+        state.setScores[currentPlayer.id] =
+          (state.setScores[currentPlayer.id] || 0) + 1;
+        state.currentSetNumber += 1;
+        state.currentLegNumber = 1;
+        state.legScores[state.currentLegNumber] = state.players.reduce(
+          (acc, player) => {
+            acc[player.id] = 0;
+            return acc;
+          },
+          {}
+        );
         WinnerModal("Set Complete", `Winner: ${currentPlayer.name}`, () => {
           resetLegState();
           state.activePlayerIndex = 0;
-          renderPlayers();
-          renderThrows();
+          render();
           showMessage("New set started", "info");
         });
       } else if (data.legComplete) {
-        currentPlayer.legsWon = (currentPlayer.legsWon || 0) + 1;
+        state.legScores[state.currentLegNumber] =
+          state.legScores[state.currentLegNumber] || {};
+        state.legScores[state.currentLegNumber][currentPlayer.id] =
+          (state.legScores[state.currentLegNumber][currentPlayer.id] || 0) + 1;
+        state.currentLegNumber += 1;
+        state.legScores[state.currentLegNumber] = state.players.reduce(
+          (acc, player) => {
+            acc[player.id] = 0;
+            return acc;
+          },
+          {}
+        );
         WinnerModal("Leg Complete", `Winner: ${currentPlayer.name}`, () => {
           resetLegState();
           state.activePlayerIndex = 0;
-          renderPlayers();
-          renderThrows();
+          render();
           showMessage("New leg started", "info");
         });
       } else {
