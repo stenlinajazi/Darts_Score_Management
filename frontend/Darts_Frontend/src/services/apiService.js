@@ -84,6 +84,14 @@ export const getPlayerStats = async (playerId) => {
   return handleResponse(response);
 };
 
+export const fetchGameState = async (gameId) => {
+  const response = await fetch(`${BASE_URL}/Games/${gameId}/state`, {
+    method: "GET",
+    headers: { "Content-Type": "application/json" },
+  });
+  return handleResponse(response);
+};
+
 const handleResponse = async (response) => {
   if (!response.ok) {
     let errorMessage = response.statusText;

@@ -1,4 +1,5 @@
 import { deleteGame } from "../../services/apiService.js";
+import Router from "../../router.js";
 
 const GameCard = (game, onDetailsClick, onDeleteClick) => {
   const winner = game.players.find((p) => p.playerId === game.winnerId);
@@ -18,6 +19,11 @@ const GameCard = (game, onDetailsClick, onDeleteClick) => {
     <td>
       <button class="details-btn" data-game-id="${game.id}">Details</button>
       <button class="delete-btn" data-game-id="${game.id}">Delete</button>
+      ${
+        !game.isComplete
+          ? `<button class="resume-btn" data-game-id="${game.id}">Resume</button>`
+          : ""
+      }
     </td>
   `;
 
@@ -37,6 +43,15 @@ const GameCard = (game, onDetailsClick, onDeleteClick) => {
       }
     }
   });
+
+  const resumeBtn = row.querySelector(".resume-btn");
+  if (resumeBtn) {
+    resumeBtn.addEventListener("click", () => {
+      const path = `/Darts_Frontend/play-game?gameId=${game.id}`;
+      Router.router(path);
+      window.history.pushState({}, document.title, path);
+    });
+  }
 
   return row;
 };

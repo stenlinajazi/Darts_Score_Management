@@ -2,7 +2,7 @@ import CreateGameModal from "../modal/CreateGameModal.js";
 import WinnerModal from "../modal/WinnerModal.js";
 import PlayerCard from "./PlayerCard.js";
 import ThrowsList from "./ThrowsList.js";
-import { submitThrows } from "../../services/apiService.js";
+import { submitThrows, fetchGameState } from "../../services/apiService.js"; // Added fetchGameState
 import { MULTIPLIERS } from "../../services/gameService.js";
 
 const PlayGame = (root) => {
@@ -86,18 +86,38 @@ const PlayGame = (root) => {
 
   const openCreateGameModal = () => {
     CreateGameModal((newGame) => {
-      state.gameId = newGame.id;
-      state.startingScore = newGame.startingScore;
-      state.players = newGame.players.map((player) => ({
-        id: player.player.id,
-        name: player.player.name,
-        startingScore: newGame.startingScore,
-        pointsThisTurn: 0,
-        remainingScore: newGame.startingScore,
-      }));
-      state.activePlayerIndex = 0;
+      initializeGameState(newGame);
       render();
       showMessage("Game created successfully", "success");
+    });
+  };
+
+  const initializeGameState = (newGame) => {
+    state.gameId = newGame.id;
+    state.startingScore = newGame.startingScore;
+    state.players = newGame.players.map((player) => ({
+      id: player.player.id,
+      name: player.player.name,
+      startingScore: newGame.startingScore,
+      pointsThisTurn: 0,
+      remainingScore: newGame.startingScore,
+      setsWon: 0,
+      legsWon: 0,
+    }));
+    state.activePlayerIndex = 0;
+    state.currentThrows = [];
+    state.selectedSegment = null;
+    state.selectedMultiplier = null;
+  };
+
+  const resetLegState = () => {
+    state.currentThrows = [];
+    state.selectedSegment = null;
+    state.selectedMultiplier = null;
+    state.players.forEach((player) => {
+      player.remainingScore = state.startingScore;
+      player.pointsThisTurn = 0;
+      player.startingScore = state.startingScore;
     });
   };
 
@@ -242,11 +262,7 @@ const PlayGame = (root) => {
       showMessage("Add at least one throw", "error");
       return;
     }
-    if (!state.players.length) {
-      showMessage("Create a game first", "error");
-      return;
-    }
-    if (!state.gameId) {
+    if (!state.players.length || !state.gameId) {
       showMessage("Please create a game first", "error");
       return;
     }
@@ -259,6 +275,7 @@ const PlayGame = (root) => {
     try {
       const data = await submitThrows(state.gameId, state.currentThrows);
       const currentPlayer = state.players[state.activePlayerIndex];
+
       if (currentPlayer) {
         currentPlayer.startingScore = currentPlayer.remainingScore;
         currentPlayer.pointsThisTurn = pointsThisTurn;
@@ -281,15 +298,29 @@ const PlayGame = (root) => {
           render();
         });
       } else if (data.setComplete) {
-        WinnerModal("Set Complete", `Winner: ${currentPlayer.name}`);
+        currentPlayer.setsWon = (currentPlayer.setsWon || 0) + 1;
+        WinnerModal("Set Complete", `Winner: ${currentPlayer.name}`, () => {
+          resetLegState();
+          state.activePlayerIndex = 0;
+          renderPlayers();
+          renderThrows();
+          showMessage("New set started", "info");
+        });
       } else if (data.legComplete) {
-        WinnerModal("Leg Complete", `Winner: ${currentPlayer.name}`);
+        currentPlayer.legsWon = (currentPlayer.legsWon || 0) + 1;
+        WinnerModal("Leg Complete", `Winner: ${currentPlayer.name}`, () => {
+          resetLegState();
+          state.activePlayerIndex = 0;
+          renderPlayers();
+          renderThrows();
+          showMessage("New leg started", "info");
+        });
+      } else {
+        state.activePlayerIndex =
+          (state.activePlayerIndex + 1) % state.players.length;
+        renderPlayers();
+        resetTurn();
       }
-
-      state.activePlayerIndex =
-        (state.activePlayerIndex + 1) % state.players.length;
-      renderPlayers();
-      resetTurn();
     } catch (error) {
       showMessage(`Error: ${error.message}`, "error");
       document.getElementById("submit-turn-btn").disabled = false;
@@ -322,4 +353,5 @@ const PlayGame = (root) => {
 
   render();
 };
+
 export default PlayGame;
